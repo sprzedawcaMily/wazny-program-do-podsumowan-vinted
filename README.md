@@ -32,7 +32,9 @@ Konfiguracja:
   - OUTPUT_HTML (domyslnie vinted_podsumowanie.html)
   - DYNAMIC_FILENAME=1 (domyslnie: dynamiczne nazwy plikow)
   - OUTPUT_PREFIX (np. podsumowanie Kamochi)
-  - (opcjonalnie) VINTED_PROFILE_DIR, VINTED_CHROME_PATH, VINTED_WAIT_FOR_LOGIN, VINTED_HEADLESS
+ - (opcjonalnie) VINTED_PROFILE_DIR, VINTED_PROFILE_NAME, VINTED_CHROME_PATH, VINTED_WAIT_FOR_LOGIN, VINTED_HEADLESS
+ - (opcjonalnie) VINTED_SCRAPE_ORDER_TYPES (domyslnie: purchased,sold)
+ - (opcjonalnie) VINTED_HISTORY_OLDER_STREAK_STOP (domyslnie: 5)
 
 Uwaga do hasla:
 - Jesli zwykle haslo nie dziala, ustaw haslo aplikacji w WP i uzyj go w WP_PASSWORD.
@@ -43,19 +45,43 @@ pip install -r requirements.txt
 Opcjonalny scraper (kraje kupujacych z Vinted):
 1. Zainstaluj zaleznosci Node:
   npm install
-2. Przy uruchomieniu programu zaakceptuj pytanie o scraping.
+2. Przy uruchomieniu programu zaakceptuj pytanie o scraping historii.
+  Skrypt wejdzie do:
+  - https://www.vinted.pl/wallet/history/YYYY/M
+  i pobierze wpisy portfela dla wybranego miesiaca (Zakup/Sprzedane) z nazwa, kwota i data.
+  Wpisy "Zakup: Ekspozycja" sa klasyfikowane jako uslugi elektroniczne.
+  Pary "Zakup" + "Zwrot srodkow" (1:1 ten sam tytul i kwota) sa automatycznie niwelowane.
+  Samotne "Zwrot srodkow" trafiaja do arkusza "Zwroty".
+3. (opcjonalnie) Przy uruchomieniu programu zaakceptuj pytanie o uzupelnienie krajow kupujacych.
   Otworzy sie przegladarka, zaloguj sie do Vinted.
   Skrypt przejdzie do zakladki Zakonczone i pobierze kraj kupujacego.
 
 Jesli logowanie przez Google jest blokowane:
 - Zaloguj sie na Vinted loginem/haslem (nie przez Google), albo
 - Uzyj profilu Chrome z zapamietana sesja i ustaw w .env:
-  - VINTED_PROFILE_DIR=C:\Users\<twoj_user>\AppData\Local\Google\Chrome\User Data\Profile 1
+  - VINTED_PROFILE_DIR=C:\Users\<twoj_user>\AppData\Local\Google\Chrome\User Data
+  - VINTED_PROFILE_NAME=Profile 1
   - VINTED_CHROME_PATH=C:\Program Files\Google\Chrome\Application\chrome.exe
   - VINTED_WAIT_FOR_LOGIN=0 (gdy sesja juz jest aktywna)
 
+Zapamietywanie logowania:
+- Domyslnie scraper zapisuje sesje we wlasnym folderze `.vinted-browser-profile` obok skryptu.
+- Po pierwszym zalogowaniu kolejne uruchomienia powinny pamietac konto.
+
 Uruchomienie:
 python vinted_mail_to_excel.py
+
+Uwaga o npm/bun:
+- Ten projekt nie ma skryptow `start` ani `dev`.
+- Dostepny skrypt Node to:
+  - npm run scrape:vinted
+  - bun run scrape:vinted
+  - bun run scrape:history -- --month 2026-04
+  - bun run scrape:history -- --month 2026-04 --item "Bluza Error"
+
+Filtrowanie po jednym itemie:
+- Mozesz podac `--item "fragment nazwy"` przy `scrape:history`.
+- Wtedy scraper sprawdzi tylko zamowienia, ktorych tytul zawiera ten fragment.
 
 Wynik:
 - Powstaje lub aktualizuje sie plik Excel:

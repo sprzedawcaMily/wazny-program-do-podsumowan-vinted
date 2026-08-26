@@ -1,0 +1,25 @@
+2026/05/03-17:17:02.503 61e0 Reusing MANIFEST E:\gitbun\porgram do podsyumowan\wazny program do podsumowan vinted\.vinted-browser-profile\Default\IndexedDB\https_www.vinted.pl_0.indexeddb.leveldb/MANIFEST-000001
+2026/05/03-17:17:02.511 61e0 Recovering log #574
+2026/05/03-17:17:02.512 61e0 Reusing old log E:\gitbun\porgram do podsyumowan\wazny program do podsumowan vinted\.vinted-browser-profile\Default\IndexedDB\https_www.vinted.pl_0.indexeddb.leveldb/000574.log 
+2026/05/03-17:17:02.512 61e0 Delete type=2 #572
+2026/05/03-17:17:04.205 5838 Level-0 table #579: started
+2026/05/03-17:17:04.236 5838 Level-0 table #579: 13715 bytes OK
+2026/05/03-17:17:04.271 5838 Delete type=0 #574
+2026/05/03-17:17:04.272 3260 Manual compaction at level-0 from '\x00\xc5\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00\xc6\x00\x00\x00' @ 0 : 0; will stop at '\x00\xc5\x01\x03\x03\x00\x00\x00\x00\x00\x00\xf0?' @ 30972 : 1
+2026/05/03-17:17:04.272 3260 Compacting 1@0 + 1@1 files
+2026/05/03-17:17:04.394 3260 Generated table #580@0: 5873 keys, 550643 bytes
+2026/05/03-17:17:04.394 3260 Compacted 1@0 + 1@1 files => 550643 bytes
+2026/05/03-17:17:04.446 3260 compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/05/03-17:17:04.446 3260 Delete type=2 #579
+2026/05/03-17:17:04.446 5e90 Manual compaction at level-0 from '\x00\xc5\x01\x03\x03\x00\x00\x00\x00\x00\x00\xf0?' @ 30972 : 1 .. '\x00\xc6\x00\x00\x00' @ 0 : 0; will stop at (end)
+2026/05/03-17:17:11.632 6264 Level-0 table #582: started
+2026/05/03-17:17:11.683 6264 Level-0 table #582: 11308 bytes OK
+2026/05/03-17:17:11.719 6264 Delete type=2 #576
+2026/05/03-17:17:11.719 6264 Delete type=0 #578
+2026/05/03-17:17:11.720 5838 Manual compaction at level-0 from '\x00\xc6\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00\xc7\x00\x00\x00' @ 0 : 0; will stop at '\x00\xc6\x01\x03\x03\x00\x00\x00\x00\x00\x00\xf0?' @ 31121 : 1
+2026/05/03-17:17:11.720 5838 Compacting 1@0 + 1@1 files
+2026/05/03-17:17:11.838 5838 Generated table #583@0: 5877 keys, 552891 bytes
+2026/05/03-17:17:11.838 5838 Compacted 1@0 + 1@1 files => 552891 bytes
+2026/05/03-17:17:11.903 5838 compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/05/03-17:17:11.904 5838 Delete type=2 #582
+2026/05/03-17:17:11.904 6608 Manual compaction at level-0 from '\x00\xc6\x01\x03\x03\x00\x00\x00\x00\x00\x00\xf0?' @ 31121 : 1 .. '\x00\xc7\x00\x00\x00' @ 0 : 0; will stop at (end)

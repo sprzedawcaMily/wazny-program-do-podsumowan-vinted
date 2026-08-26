@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="pl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vinted - Podsumowanie</title>
+    <style>
+        :root {
+            color-scheme: light;
+            font-family: Arial, sans-serif;
+            background: #f6f7f9;
+            color: #1b1f24;
+        }
+        body {
+            margin: 24px;
+        }
+        h1 {
+            margin-bottom: 16px;
+        }
+        h2 {
+            margin: 24px 0 8px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #ffffff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        th, td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #e2e5ea;
+            text-align: left;
+            vertical-align: top;
+            font-size: 14px;
+        }
+        th {
+            background: #eef1f6;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        tbody tr:nth-child(even) {
+            background: #f9fafb;
+        }
+    </style>
+</head>
+<body>
+    <h1>Vinted - Podsumowanie</h1>
+    <h2>Podsumowanie</h2><table><thead><tr><th>pozycja</th><th>suma</th></tr></thead><tbody><tr><td>Suma sprzedazy</td><td>=SUM(Sprzedaze!C:C)</td></tr>
+<tr><td>Suma sprzedazy zagraniczna</td><td>=SUMIFS(Sprzedaze!C:C,Sprzedaze!F:F,&quot;tak&quot;)</td></tr>
+<tr><td>Suma zakupow</td><td>=SUM(Zakupy!D:D)</td></tr>
+<tr><td>Suma uslug elektronicznych</td><td>=SUM('Uslugi elektroniczne'!C:C)</td></tr>
+<tr><td>Suma zwrotow</td><td>=SUM(Zwroty!C:C)</td></tr></tbody></table><h2>Zakupy</h2><table><thead><tr><th>data</th><th>tytul_oryginal</th><th>tytul_pl</th><th>kwota_lacznie</th></tr></thead><tbody><tr><td>09.06.2026</td><td>Johnny Blaze Bluza</td><td>Johnny Blaze Bluza</td><td>115.49</td></tr>
+<tr><td>10.06.2026</td><td>Rawblue műbőr férfi kabát</td><td>Niebieska kurtka męska ze sztucznej skóry</td><td>246.43</td></tr>
+<tr><td>12.06.2026</td><td>Zestaw 2 przedmiotów</td><td>Zestaw 2 przedmiotów</td><td>92.15</td></tr>
+<tr><td>12.06.2026</td><td>Ralph lauren vintage huppari</td><td>Bluza z kapturem Ralpha Laurena w stylu vintage</td><td>112.91</td></tr>
+<tr><td>12.06.2026</td><td>Baggy Sean John</td><td>Baggy Sean John</td><td>56.24</td></tr>
+<tr><td>14.06.2026</td><td>Spodnie Baggy,Rap,Skate Vintage Error M</td><td>Spodnie Baggy,Rap,Skate Vintage Error M</td><td>69.5</td></tr>
+<tr><td>15.06.2026</td><td>Spodnie Baggy,Rap,Skate Vintage Error M</td><td>Spodnie Baggy,Rap,Skate Vintage Error M</td><td>69.5</td></tr>
+<tr><td>15.06.2026</td><td>Cepure</td><td>Kapelusz</td><td>31.83</td></tr>
+<tr><td>15.06.2026</td><td>Ženska majica s kapuljačom</td><td>Bluza damska</td><td>29.05</td></tr>
+<tr><td>16.06.2026</td><td>Koszulka Enyce USA L</td><td>Koszulka Enyce USA L</td><td>23.3</td></tr>
+<tr><td>17.06.2026</td><td>Koszula na deskę skejt style</td><td>Koszula na deskę skejt style</td><td>51.95</td></tr>
+<tr><td>18.06.2026</td><td>Ženska majica s kapuljačom</td><td>Bluza damska</td><td>22.2</td></tr>
+<tr><td>19.06.2026</td><td>Zestaw 2 przedmiotów</td><td>Zestaw 2 przedmiotów</td><td>54.26</td></tr>
+<tr><td>22.06.2026</td><td>Vintage Vokal Hoodie</td><td>Vintage wokalna bluza z kapturem</td><td>73.88</td></tr>
+<tr><td>26.06.2026</td><td>Denim &amp; Supply Ralph Lauren sweatshirt y2k 00s 90s vintage style</td><td>Bluza Denim &amp; Supply Ralph Lauren z lat 00. i 90. w stylu vintage</td><td>105.2</td></tr>
+<tr><td>26.06.2026</td><td>Cross Colours hoodie / mikina s kapucí – XL – hip hop streetwear</td><td>Bluza z kapturem Cross Colors - XL - hiphopowy streetwear</td><td>37.71</td></tr>
+<tr><td>26.06.2026</td><td>Ralph lauren vintage huppari</td><td>Bluza z kapturem Ralpha Laurena w stylu vintage</td><td>102.65</td></tr>
+<tr><td>28.06.2026</td><td>Spodnie szare baggy y2k vintage</td><td>Spodnie szare baggy y2k vintage</td><td>23.9</td></tr>
+<tr><td>30.06.2026</td><td>JNCO Džíny</td><td>Dżinsy JNCO</td><td>207.03</td></tr>
+<tr><td>30.06.2026</td><td>JNCO Džíny</td><td>JNCO Džíny</td><td>140.84</td></tr></tbody></table><h2>Sprzedaze</h2><table><thead><tr><th>data</th><th>tytul_oryginal</th><th>kwota</th><th>numer_transakcji</th><th>kraj_kupujacego</th><th>wysylka_zagraniczna</th></tr></thead><tbody><tr><td>03.06.2026</td><td>oakley czapka Uniwersalny Jnco baggy hiphop</td><td>69.0</td><td>19967412023</td><td>Rumunia</td><td>tak</td></tr>
+<tr><td>08.06.2026</td><td>Dresy Jigga Wear lekko poszarpane poplamione</td><td>67.62</td><td>19943664256</td><td>Węgry</td><td>tak</td></tr>
+<tr><td>13.06.2026</td><td>spodnie southpole dla ziomka z instagram</td><td>250.0</td><td>20324858090</td><td>Polska</td><td>nie</td></tr>
+<tr><td>13.06.2026</td><td>fishbone Szorty M Jnco baggy hiphop</td><td>49.0</td><td>20317228566</td><td>Polska</td><td>nie</td></tr>
+<tr><td>15.06.2026</td><td>Malita kurtka 74x62 L og hip hop rap. Mass clinic error</td><td>30.0</td><td>22205171487</td><td>Polska</td><td>nie</td></tr>
+<tr><td>20.06.2026</td><td>DC Shoes T-shirt S Jnco baggy</td><td>90.0</td><td>20418227773</td><td>Polska</td><td>nie</td></tr>
+<tr><td>24.06.2026</td><td>ed hardy Plecak Uniwersalny Archive Ed hardy</td><td>39.2</td><td>20411564916</td><td>Polska</td><td>nie</td></tr>
+<tr><td>24.06.2026</td><td>Akademiks size 38/34 bez wad czarne</td><td>49.0</td><td>20360918843</td><td>Polska</td><td>nie</td></tr>
+<tr><td>25.06.2026</td><td>Us 40 spodenki</td><td>20.9</td><td>20537918271</td><td>Polska</td><td>nie</td></tr>
+<tr><td>25.06.2026</td><td>Xtreme couture T-shirt XL Affliction tapout</td><td>130.0</td><td>20413590987</td><td>Słowacja</td><td>tak</td></tr>
+<tr><td>27.06.2026</td><td>And1 Szorty L Jnco baggy hiphop</td><td>50.0</td><td>20574765312</td><td>Polska</td><td>nie</td></tr>
+<tr><td>30.06.2026</td><td>fishbone Szorty S Jnco baggy hiphop</td><td>39.99</td><td>20566774620</td><td>Czechy</td><td>tak</td></tr></tbody></table><h2>Uslugi elektroniczne</h2><table><thead><tr><th>data</th><th>usluga</th><th>kwota</th></tr></thead><tbody><tr><td>14.06.2026</td><td>Usluga 7-dniowa 24</td><td>24.95</td></tr>
+<tr><td>28.06.2026</td><td>Usluga 7-dniowa 24</td><td>22.45</td></tr></tbody></table><h2>Zwroty</h2><table><thead><tr><th>data</th><th>tytul</th><th>kwota</th></tr></thead><tbody><tr><td>09.06.2026</td><td>ed hardy T-shirt L Affliction tapout</td><td>6.29</td></tr></tbody></table>
+</body>
+</html>

@@ -17,6 +17,7 @@ from deep_translator import GoogleTranslator
 from dotenv import load_dotenv
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import PatternFill
+from openpyxl.utils import get_column_letter
 
 
 SALE_SUBJECT = "zamowienie zostalo zakonczone"
@@ -134,13 +135,14 @@ def parse_date_from_email(msg: email.message.Message, body: str) -> str:
             dt = parsedate_to_datetime(date_hdr)
             if dt.tzinfo is None:
                 dt = dt.replace(tzinfo=timezone.utc)
-            return dt.astimezone().strftime("%d.%m.%Y %H:%M")
+            return dt.astimezone().strftime("%d.%m.%Y")
         except Exception:
             pass
 
-    m = re.search(r"Data\s*:\s*(\d{1,2}\.\d{1,2}\.\d{4})\s*(?:o)?\s*(\d{1,2}:\d{2})", body, flags=re.IGNORECASE)
+    m = re.search(r"Data\s*:\s*(\d{1,2}\.\d{1,2}\.\d{4})", body, flags=re.IGNORECASE)
     if m:
-        return f"{m.group(1)} {m.group(2)}"
+        dd, mm, yyyy = m.group(1).split(".")
+        return f"{dd.zfill(2)}.{mm.zfill(2)}.{yyyy}"
 
     return ""
 
@@ -415,6 +417,170 @@ def parse_money_to_float(value: str) -> Optional[float]:
         return None
 
 
+def _to_excel_amount(value) -> Optional[float]:
+    if isinstance(value, (int, float)):
+        return float(value)
+    return parse_money_to_float(str(value or ""))
+
+
+def _to_excel_abs_amount(value) -> Optional[float]:
+    num = _to_excel_amount(value)
+    if num is None:
+        return None
+    return abs(num)
+
+
+def _sanitize_title(value: str) -> str:
+    text = _normalize_scraped_value(value)
+    text = re.sub(r"^[\s,;:.\-–—'\"„”`]+", "", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+
+
+def _normalize_title_key(value: str) -> str:
+    text = _sanitize_title(value).lower()
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+
+
+def _compact_title_key(value: str) -> str:
+    normalized = _normalize_title_key(value)
+    return re.sub(r"[\W_]+", "", normalized, flags=re.UNICODE)
+
+
+def _titles_look_same(left: str, right: str) -> bool:
+    a = _compact_title_key(left)
+    b = _compact_title_key(right)
+    if not a or not b:
+        return False
+    if a == b:
+        return True
+    if (a in b or b in a) and min(len(a), len(b)) >= 10:
+        return True
+    return False
+
+
+def _is_bundle_title(value: str) -> bool:
+    title = _normalize_title_key(value)
+    return "zestaw" in title or "bundle" in title
+
+
+def _normalize_amount_column(ws, header_name: str, force_abs: bool = False) -> None:
+    idx = _find_column_index(ws, header_name)
+    if idx is None:
+        return
+    for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+        if not row or idx >= len(row):
+            continue
+        raw = row[idx]
+        value = _to_excel_amount(raw)
+        if value is None:
+            continue
+        if force_abs:
+            value = abs(value)
+        ws.cell(row=row_idx, column=idx + 1, value=value)
+
+
+def _extract_date_only(value: str) -> str:
+    text = str(value or "").strip()
+    m = re.search(r"(\d{1,2})\.(\d{1,2})\.(\d{4})", text)
+    if not m:
+        return text
+    dd = m.group(1).zfill(2)
+    mm = m.group(2).zfill(2)
+    yyyy = m.group(3)
+    return f"{dd}.{mm}.{yyyy}"
+
+
+def _date_sort_key(value: str) -> Tuple[int, int, int]:
+    m = re.search(r"(\d{1,2})\.(\d{1,2})\.(\d{4})", str(value or ""))
+    if not m:
+        return (0, 0, 0)
+    return (int(m.group(3)), int(m.group(2)), int(m.group(1)))
+
+
+def _dedupe_and_sort_sheet(
+    ws,
+    title_header: str,
+    amount_header: str,
+    extra_headers: Optional[List[str]] = None,
+    force_abs_amount: bool = False,
+    merge_bundle_variants: bool = False,
+    merge_similar_titles: bool = False,
+) -> None:
+    idx_date = _find_column_index(ws, "data")
+    idx_title = _find_column_index(ws, title_header)
+    idx_amount = _find_column_index(ws, amount_header)
+    if idx_date is None or idx_title is None or idx_amount is None:
+        return
+
+    extra_headers = extra_headers or []
+    extra_indices = [idx for idx in (_find_column_index(ws, h) for h in extra_headers) if idx is not None]
+    extra_weights: Dict[int, int] = {}
+    for header in extra_headers:
+        idx = _find_column_index(ws, header)
+        if idx is None:
+            continue
+        normalized = str(header or "").strip().lower()
+        # Transaction number is the strongest identifier, prefer rows that contain it.
+        extra_weights[idx] = 10 if normalized == "numer_transakcji" else 1
+
+    rows = []
+    for row in ws.iter_rows(min_row=2, values_only=True):
+        if not row:
+            continue
+        row_values = list(row)
+        while len(row_values) <= max(idx_date, idx_title, idx_amount, *(extra_indices or [0])):
+            row_values.append("")
+
+        row_values[idx_date] = _extract_date_only(row_values[idx_date])
+        amount_value = _to_excel_amount(row_values[idx_amount])
+        if amount_value is not None and force_abs_amount:
+            amount_value = abs(amount_value)
+        row_values[idx_amount] = amount_value
+        rows.append(row_values)
+
+    bundle_date_amount_keys = set()
+    if merge_bundle_variants:
+        for row in rows:
+            date_key = _extract_date_only(row[idx_date]).lower()
+            amount_key = _amount_abs_key(str(row[idx_amount]))
+            if _is_bundle_title(str(row[idx_title] or "")):
+                bundle_date_amount_keys.add((date_key, amount_key))
+
+    best_by_key: Dict[Tuple[str, str, str], List] = {}
+    for row in rows:
+        date_key = _extract_date_only(row[idx_date]).lower()
+        title_key = _normalize_title_key(str(row[idx_title] or ""))
+        amount_key = _amount_abs_key(str(row[idx_amount]))
+        if merge_bundle_variants and (date_key, amount_key) in bundle_date_amount_keys:
+            title_key = "__bundle__"
+        key = (date_key, title_key, amount_key)
+        if merge_similar_titles:
+            for existing_key in list(best_by_key.keys()):
+                if existing_key[0] != date_key or existing_key[2] != amount_key:
+                    continue
+                if _titles_look_same(title_key, existing_key[1]):
+                    key = existing_key
+                    break
+        current = best_by_key.get(key)
+        if current is None:
+            best_by_key[key] = row
+            continue
+        current_score = sum(extra_weights.get(idx, 1) for idx in extra_indices if _normalize_scraped_value(current[idx]))
+        new_score = sum(extra_weights.get(idx, 1) for idx in extra_indices if _normalize_scraped_value(row[idx]))
+        if new_score > current_score:
+            best_by_key[key] = row
+
+    unique_rows = list(best_by_key.values())
+    unique_rows.sort(key=lambda r: _date_sort_key(r[idx_date]))
+
+    if ws.max_row > 1:
+        ws.delete_rows(2, ws.max_row - 1)
+    for row in unique_rows:
+        ws.append(row)
+
+
 def sum_currency_strings(values: List[str]) -> str:
     total = 0.0
     found = False
@@ -502,7 +668,6 @@ def ensure_workbook(path: str) -> Workbook:
         "data",
         "tytul_oryginal",
         "kwota",
-        "nr_vat",
         "numer_transakcji",
         "kraj_kupujacego",
         "wysylka_zagraniczna",
@@ -512,7 +677,7 @@ def ensure_workbook(path: str) -> Workbook:
         ws.append(sales_headers)
     else:
         ws = wb["Sprzedaze"]
-        _drop_columns(ws, ["tytul_pl", "temat", "email_uid", "tx_id", "kraj"])
+        _drop_columns(ws, ["tytul_pl", "temat", "email_uid", "tx_id", "kraj", "nr_vat"])
         _reorder_sheet(ws, sales_headers)
 
     if "Uslugi elektroniczne" not in wb.sheetnames:
@@ -521,6 +686,13 @@ def ensure_workbook(path: str) -> Workbook:
     else:
         ws = wb["Uslugi elektroniczne"]
         _ensure_headers(ws, ["data", "usluga", "kwota"])
+
+    if "Zwroty" not in wb.sheetnames:
+        ws = wb.create_sheet("Zwroty")
+        ws.append(["data", "tytul", "kwota"])
+    else:
+        ws = wb["Zwroty"]
+        _ensure_headers(ws, ["data", "tytul", "kwota"])
 
     if "Podsumowanie" not in wb.sheetnames:
         ws = wb.create_sheet("Podsumowanie")
@@ -531,7 +703,12 @@ def ensure_workbook(path: str) -> Workbook:
         ws.append(["kind", "key"])
         ws.sheet_state = "hidden"
 
-    _ensure_sheet_order(wb, ["Zakupy", "Sprzedaze", "Uslugi elektroniczne", "Podsumowanie", "_Meta"])
+    _ensure_sheet_order(wb, ["Zakupy", "Sprzedaze", "Uslugi elektroniczne", "Zwroty", "Podsumowanie", "_Meta"])
+
+    _normalize_amount_column(wb["Zakupy"], "kwota_lacznie", force_abs=True)
+    _normalize_amount_column(wb["Sprzedaze"], "kwota")
+    _normalize_amount_column(wb["Uslugi elektroniczne"], "kwota", force_abs=True)
+    _normalize_amount_column(wb["Zwroty"], "kwota", force_abs=True)
 
     if "Sheet" in wb.sheetnames and len(wb.sheetnames) > 2:
         del wb["Sheet"]
@@ -544,10 +721,9 @@ def append_record(ws, record: Record) -> None:
         ws.append(
             [
                 record.date_text,
-                record.title_original,
-                record.amount_total,
-                record.vat_number,
-                record.transaction_number,
+                _sanitize_title(record.title_original),
+                _to_excel_amount(record.amount_total),
+                _normalize_scraped_value(record.transaction_number),
                 "",
                 record.shipping_international,
             ]
@@ -555,15 +731,15 @@ def append_record(ws, record: Record) -> None:
         return
 
     if ws.title == "Uslugi elektroniczne":
-        ws.append([record.date_text, record.title_original, record.amount_total])
+        ws.append([record.date_text, _sanitize_title(record.title_original), _to_excel_abs_amount(record.amount_total)])
         return
 
     ws.append(
         [
             record.date_text,
-            record.title_original,
-            record.title_pl,
-            record.amount_total,
+            _sanitize_title(record.title_original),
+            _sanitize_title(record.title_pl),
+            _to_excel_abs_amount(record.amount_total),
         ]
     )
 
@@ -643,6 +819,7 @@ def write_html_report(path: str, wb: Workbook) -> None:
     sales = wb["Sprzedaze"] if "Sprzedaze" in wb.sheetnames else None
     purchases = wb["Zakupy"] if "Zakupy" in wb.sheetnames else None
     services = wb["Uslugi elektroniczne"] if "Uslugi elektroniczne" in wb.sheetnames else None
+    refunds = wb["Zwroty"] if "Zwroty" in wb.sheetnames else None
     summary = wb["Podsumowanie"] if "Podsumowanie" in wb.sheetnames else None
 
     sections = []
@@ -654,6 +831,8 @@ def write_html_report(path: str, wb: Workbook) -> None:
         sections.append(_sheet_to_html_table(sales, "Sprzedaze"))
     if services:
         sections.append(_sheet_to_html_table(services, "Uslugi elektroniczne"))
+    if refunds:
+        sections.append(_sheet_to_html_table(refunds, "Zwroty"))
 
         html = f"""<!doctype html>
 <html lang="pl">
@@ -978,6 +1157,7 @@ def main() -> None:
     ws_sales = wb["Sprzedaze"]
     ws_purchases = wb["Zakupy"]
     ws_services = wb["Uslugi elektroniczne"]
+    ws_refunds = wb["Zwroty"]
     ws_summary = wb["Podsumowanie"]
     ws_meta = wb["_Meta"]
 
@@ -993,11 +1173,24 @@ def main() -> None:
             pass
         mail.logout()
 
+    history_records: List[Dict[str, str]] = []
+    history_choice = input(
+        "Czy dociagnac historie zakupow/sprzedazy z Vinted (wallet/history)? (t/n): "
+    ).strip()
+    if _is_yes(history_choice):
+        try:
+            history_records = _run_puppeteer_history_scraper("vinted_scrape.js", month_str)
+            print(f"Pobrano wpisy z historii Vinted: {len(history_records)}")
+        except Exception as exc:
+            print(f"Scraper historii nie powiodl sie: {exc}")
+
     added_sales = 0
     added_purchases = 0
     added_services = 0
+    services_tuple_set = _build_services_existing_set(ws_services)
 
     for rec in records:
+        rec.date_text = _extract_date_only(rec.date_text)
         key = record_key(rec)
         if rec.kind == "sprzedaz":
             if key in sale_ids:
@@ -1016,10 +1209,37 @@ def main() -> None:
         elif rec.kind == "usluga":
             if key in service_ids:
                 continue
+            service_row_key = (
+                _extract_date_only(_normalize_scraped_value(rec.date_text)).lower(),
+                _normalize_title_key(rec.title_original),
+                _amount_abs_key(_normalize_scraped_value(rec.amount_total)),
+            )
+            if service_row_key in services_tuple_set:
+                continue
             append_record(ws_services, rec)
             service_ids.add(key)
+            services_tuple_set.add(service_row_key)
             ws_meta.append(["usluga", key])
             added_services += 1
+
+    filled_tx = _fill_sales_transaction_numbers_from_records(ws_sales, records)
+    if filled_tx:
+        print(f"Uzupelniono numery transakcji z maili: {filled_tx}")
+
+    hist_added_sales, hist_added_purchases, hist_added_services, hist_added_refunds = _append_history_records(
+        ws_sales, ws_purchases, ws_services, ws_refunds, history_records
+    )
+    filled_tx_history = _fill_sales_transaction_numbers_from_history(ws_sales, history_records)
+    if filled_tx_history:
+        print(f"Uzupelniono numery transakcji z historii: {filled_tx_history}")
+    if hist_added_sales or hist_added_purchases or hist_added_services or hist_added_refunds:
+        print(
+            "Historia Vinted -> dodano sprzedaze: "
+            f"{hist_added_sales}, zakupy: {hist_added_purchases}, uslugi: {hist_added_services}, zwroty: {hist_added_refunds}"
+        )
+    added_sales += hist_added_sales
+    added_purchases += hist_added_purchases
+    added_services += hist_added_services
 
     targets = _build_scrape_targets(ws_sales)
     if not targets:
@@ -1035,11 +1255,29 @@ def main() -> None:
             except Exception as exc:
                 print(f"Scraper nie powiodl sie: {exc}")
 
-    _update_summary(ws_summary, ws_sales, ws_purchases, ws_services)
+    _dedupe_and_sort_sheet(
+        ws_purchases,
+        "tytul_oryginal",
+        "kwota_lacznie",
+        force_abs_amount=True,
+        merge_bundle_variants=True,
+    )
+    _dedupe_and_sort_sheet(
+        ws_sales,
+        "tytul_oryginal",
+        "kwota",
+        ["numer_transakcji", "kraj_kupujacego", "wysylka_zagraniczna"],
+        merge_similar_titles=True,
+    )
+    _dedupe_and_sort_sheet(ws_services, "usluga", "kwota", force_abs_amount=True)
+    _dedupe_and_sort_sheet(ws_refunds, "tytul", "kwota", force_abs_amount=True)
+
+    _update_summary(ws_summary, ws_sales, ws_purchases, ws_services, ws_refunds)
 
     _autosize_columns(ws_purchases)
     _autosize_columns(ws_sales)
     _autosize_columns(ws_services)
+    _autosize_columns(ws_refunds)
     _autosize_columns(ws_summary)
     wb.save(output)
     write_html_report(output_html, wb)
@@ -1089,6 +1327,111 @@ def _build_order_index(orders: List[Dict[str, str]]):
             by_price.setdefault(round(amount_key, 2), []).append(order)
 
     return by_tx, by_key, by_title, by_price
+
+
+def _fill_sales_transaction_numbers_from_records(ws_sales, records: List[Record]) -> int:
+    idx_date = _find_column_index(ws_sales, "data")
+    idx_title = _find_column_index(ws_sales, "tytul_oryginal")
+    idx_amount = _find_column_index(ws_sales, "kwota")
+    idx_tx = _find_column_index(ws_sales, "numer_transakcji")
+    if idx_date is None or idx_title is None or idx_amount is None or idx_tx is None:
+        return 0
+
+    by_key: Dict[Tuple[str, str, str], List[str]] = {}
+    by_title_amount: Dict[Tuple[str, str], List[str]] = {}
+    for rec in records:
+        if rec.kind != "sprzedaz":
+            continue
+        tx = _normalize_scraped_value(rec.transaction_number)
+        if not tx:
+            continue
+        date_key = _extract_date_only(_normalize_scraped_value(rec.date_text)).lower()
+        title_key = _normalize_title_key(rec.title_original)
+        amount_key = _amount_abs_key(_normalize_scraped_value(rec.amount_total))
+        by_key.setdefault((date_key, title_key, amount_key), []).append(tx)
+        by_title_amount.setdefault((title_key, amount_key), []).append(tx)
+
+    updated = 0
+    for row_idx, row in enumerate(ws_sales.iter_rows(min_row=2, values_only=True), start=2):
+        if not row:
+            continue
+        tx_val = row[idx_tx] if idx_tx < len(row) else ""
+        if _normalize_scraped_value(tx_val):
+            continue
+
+        date_val = row[idx_date] if idx_date < len(row) else ""
+        title_val = row[idx_title] if idx_title < len(row) else ""
+        amount_val = row[idx_amount] if idx_amount < len(row) else ""
+        key = (
+            _extract_date_only(_normalize_scraped_value(date_val)).lower(),
+            _normalize_title_key(title_val),
+            _amount_abs_key(_normalize_scraped_value(amount_val)),
+        )
+        candidates = by_key.get(key, [])
+        if not candidates:
+            fallback_key = (key[1], key[2])
+            candidates = by_title_amount.get(fallback_key, [])
+        if not candidates:
+            continue
+
+        ws_sales.cell(row=row_idx, column=idx_tx + 1).value = candidates.pop(0)
+        updated += 1
+
+    return updated
+
+
+def _fill_sales_transaction_numbers_from_history(ws_sales, history_records: List[Dict[str, str]]) -> int:
+    idx_date = _find_column_index(ws_sales, "data")
+    idx_title = _find_column_index(ws_sales, "tytul_oryginal")
+    idx_amount = _find_column_index(ws_sales, "kwota")
+    idx_tx = _find_column_index(ws_sales, "numer_transakcji")
+    if idx_date is None or idx_title is None or idx_amount is None or idx_tx is None:
+        return 0
+
+    by_key: Dict[Tuple[str, str, str], List[str]] = {}
+    by_title_amount: Dict[Tuple[str, str], List[str]] = {}
+    for item in history_records:
+        kind = _normalize_scraped_value(item.get("kind", "")).lower()
+        if kind != "sprzedaz":
+            continue
+        tx = _normalize_scraped_value(item.get("transaction_number", ""))
+        if not tx:
+            tx = _fallback_tx_from_order_url(item.get("order_url", ""))
+        if not tx:
+            continue
+        date_key = _extract_date_only(_normalize_scraped_value(item.get("date_text", ""))).lower()
+        title_key = _normalize_title_key(item.get("title", ""))
+        amount_key = _amount_abs_key(_normalize_scraped_value(item.get("price", "")))
+        by_key.setdefault((date_key, title_key, amount_key), []).append(tx)
+        by_title_amount.setdefault((title_key, amount_key), []).append(tx)
+
+    updated = 0
+    for row_idx, row in enumerate(ws_sales.iter_rows(min_row=2, values_only=True), start=2):
+        if not row:
+            continue
+        tx_val = row[idx_tx] if idx_tx < len(row) else ""
+        if _normalize_scraped_value(tx_val):
+            continue
+
+        date_val = row[idx_date] if idx_date < len(row) else ""
+        title_val = row[idx_title] if idx_title < len(row) else ""
+        amount_val = row[idx_amount] if idx_amount < len(row) else ""
+        key = (
+            _extract_date_only(_normalize_scraped_value(date_val)).lower(),
+            _normalize_title_key(title_val),
+            _amount_abs_key(_normalize_scraped_value(amount_val)),
+        )
+        candidates = by_key.get(key, [])
+        if not candidates:
+            fallback_key = (key[1], key[2])
+            candidates = by_title_amount.get(fallback_key, [])
+        if not candidates:
+            continue
+
+        ws_sales.cell(row=row_idx, column=idx_tx + 1).value = candidates.pop(0)
+        updated += 1
+
+    return updated
 
 
 def _update_sales_from_scrape(ws_sales, orders: List[Dict[str, str]]) -> int:
@@ -1142,8 +1485,13 @@ def _update_sales_from_scrape(ws_sales, orders: List[Dict[str, str]]) -> int:
             continue
 
         country = str(order.get("country") or "").strip()
+        order_tx = str(order.get("transaction_number") or "").strip()
         match_type = str(order.get("match_type") or "").strip()
         uncertain = match_type in {"price_only", "bundle_price", "title_only"}
+        if idx_tx is not None and order_tx:
+            cell = ws_sales.cell(row=row_idx, column=idx_tx + 1)
+            if not str(cell.value or "").strip():
+                cell.value = order_tx
         if idx_country is not None and country:
             cell = ws_sales.cell(row=row_idx, column=idx_country + 1)
             cell.value = country
@@ -1193,14 +1541,25 @@ def _build_scrape_targets(ws_sales) -> List[Dict[str, str]]:
 
 
 def _run_puppeteer_scraper(script_path: str, targets: List[Dict[str, str]]) -> List[Dict[str, str]]:
+    env = os.environ.copy()
+    if targets:
+        env["VINTED_TARGETS_JSON"] = json.dumps(targets, ensure_ascii=True)
+    return _run_node_scraper(script_path, env)
+
+
+def _run_puppeteer_history_scraper(script_path: str, target_month: str) -> List[Dict[str, str]]:
+    env = os.environ.copy()
+    env["VINTED_SCRAPE_MODE"] = "history"
+    env["VINTED_SCRAPE_TARGET_MONTH"] = target_month
+    return _run_node_scraper(script_path, env)
+
+
+def _run_node_scraper(script_path: str, env: Dict[str, str]) -> List[Dict[str, str]]:
     if not os.path.exists(script_path):
         raise RuntimeError("Nie znaleziono vinted_scrape.js. Utworz plik i zainstaluj puppeteer.")
 
     print("Uruchamiam scraper Puppeteer. Zaloguj sie do Vinted, a potem potwierdz ENTER w terminalu.")
     print("Jesli logowanie przez Google jest blokowane, uzyj loginu/hasla Vinted albo ustaw VINTED_PROFILE_DIR.")
-    env = os.environ.copy()
-    if targets:
-        env["VINTED_TARGETS_JSON"] = json.dumps(targets, ensure_ascii=True)
     result = subprocess.run(
         ["node", script_path],
         capture_output=True,
@@ -1240,59 +1599,256 @@ def _run_puppeteer_scraper(script_path: str, targets: List[Dict[str, str]]) -> L
         raise RuntimeError("Nie udalo sie odczytac JSON ze scrapera.") from exc
 
 
-def _update_summary(ws_summary, ws_sales, ws_purchases, ws_services) -> None:
+def _normalize_scraped_value(value: str) -> str:
+    return str(value or "").replace("\xa0", " ").strip()
+
+
+def _build_sales_existing_sets(ws_sales):
+    idx_date = _find_column_index(ws_sales, "data")
+    idx_title = _find_column_index(ws_sales, "tytul_oryginal")
+    idx_amount = _find_column_index(ws_sales, "kwota")
+    idx_tx = _find_column_index(ws_sales, "numer_transakcji")
+    tx_set = set()
+    tuple_set = set()
+    for row in ws_sales.iter_rows(min_row=2, values_only=True):
+        if not row:
+            continue
+        date_val = _extract_date_only(
+            _normalize_scraped_value(row[idx_date] if idx_date is not None and idx_date < len(row) else "")
+        )
+        title_val = _normalize_title_key(row[idx_title] if idx_title is not None and idx_title < len(row) else "")
+        amount_val = row[idx_amount] if idx_amount is not None and idx_amount < len(row) else ""
+        amount_key = _amount_abs_key(str(amount_val))
+        tx_val = _normalize_scraped_value(row[idx_tx] if idx_tx is not None and idx_tx < len(row) else "")
+        if tx_val:
+            tx_set.add(tx_val)
+        if date_val or title_val or amount_key:
+            tuple_set.add((date_val.lower(), title_val.lower(), amount_key))
+    return tx_set, tuple_set
+
+
+def _build_purchase_existing_set(ws_purchases):
+    idx_date = _find_column_index(ws_purchases, "data")
+    idx_title = _find_column_index(ws_purchases, "tytul_oryginal")
+    idx_amount = _find_column_index(ws_purchases, "kwota_lacznie")
+    existing = set()
+    for row in ws_purchases.iter_rows(min_row=2, values_only=True):
+        if not row:
+            continue
+        date_val = _extract_date_only(
+            _normalize_scraped_value(row[idx_date] if idx_date is not None and idx_date < len(row) else "")
+        )
+        title_val = _normalize_title_key(row[idx_title] if idx_title is not None and idx_title < len(row) else "")
+        amount_val = row[idx_amount] if idx_amount is not None and idx_amount < len(row) else ""
+        amount_key = _amount_abs_key(str(amount_val))
+        if date_val or title_val or amount_key:
+            existing.add((date_val.lower(), title_val.lower(), amount_key))
+    return existing
+
+
+def _build_services_existing_set(ws_services):
+    idx_date = _find_column_index(ws_services, "data")
+    idx_name = _find_column_index(ws_services, "usluga")
+    idx_amount = _find_column_index(ws_services, "kwota")
+    existing = set()
+    for row in ws_services.iter_rows(min_row=2, values_only=True):
+        if not row:
+            continue
+        date_val = _extract_date_only(
+            _normalize_scraped_value(row[idx_date] if idx_date is not None and idx_date < len(row) else "")
+        )
+        name_val = _normalize_title_key(row[idx_name] if idx_name is not None and idx_name < len(row) else "")
+        amount_val = row[idx_amount] if idx_amount is not None and idx_amount < len(row) else ""
+        amount_key = _amount_abs_key(str(amount_val))
+        if date_val or name_val or amount_key:
+            existing.add((date_val.lower(), name_val.lower(), amount_key))
+    return existing
+
+
+def _build_refunds_existing_set(ws_refunds):
+    idx_date = _find_column_index(ws_refunds, "data")
+    idx_title = _find_column_index(ws_refunds, "tytul")
+    idx_amount = _find_column_index(ws_refunds, "kwota")
+    existing = set()
+    for row in ws_refunds.iter_rows(min_row=2, values_only=True):
+        if not row:
+            continue
+        date_val = _extract_date_only(
+            _normalize_scraped_value(row[idx_date] if idx_date is not None and idx_date < len(row) else "")
+        )
+        title_val = _normalize_title_key(row[idx_title] if idx_title is not None and idx_title < len(row) else "")
+        amount_val = row[idx_amount] if idx_amount is not None and idx_amount < len(row) else ""
+        amount_key = _amount_abs_key(str(amount_val))
+        if date_val or title_val or amount_key:
+            existing.add((date_val.lower(), title_val.lower(), amount_key))
+    return existing
+
+
+def _amount_abs_key(value: str) -> str:
+    num = parse_money_to_float(str(value or ""))
+    if num is None:
+        return _normalize_scraped_value(value).lower()
+    return f"{abs(num):.2f}"
+
+
+def _amount_abs_display(value: str) -> Optional[float]:
+    num = parse_money_to_float(str(value or ""))
+    if num is None:
+        return _to_excel_amount(value)
+    return abs(num)
+
+
+def _fallback_tx_from_order_url(order_url: str) -> str:
+    url = _normalize_scraped_value(order_url)
+    if not url:
+        return ""
+    m_item = re.search(r"/items/(\d+)", url, flags=re.IGNORECASE)
+    if m_item:
+        return m_item.group(1)
+    m_any = re.search(r"(\d{6,})", url)
+    if m_any:
+        return m_any.group(1)
+    return ""
+
+
+def _append_history_records(
+    ws_sales, ws_purchases, ws_services, ws_refunds, history_records: List[Dict[str, str]]
+) -> Tuple[int, int, int, int]:
+    if not history_records:
+        return 0, 0, 0, 0
+
+    sales_tx_set, sales_tuple_set = _build_sales_existing_sets(ws_sales)
+    purchase_tuple_set = _build_purchase_existing_set(ws_purchases)
+    services_tuple_set = _build_services_existing_set(ws_services)
+    refunds_tuple_set = _build_refunds_existing_set(ws_refunds)
+    added_sales = 0
+    added_purchases = 0
+    added_services = 0
+    added_refunds = 0
+
+    purchase_counts: Dict[Tuple[str, str], int] = {}
+    refund_counts: Dict[Tuple[str, str], int] = {}
+    for item in history_records:
+        kind = _normalize_scraped_value(item.get("kind", "")).lower()
+        if kind not in {"zakup", "zwrot"}:
+            continue
+        title = _normalize_title_key(item.get("title", ""))
+        amount_key = _amount_abs_key(_normalize_scraped_value(item.get("price", "")))
+        key = (title, amount_key)
+        if kind == "zakup":
+            purchase_counts[key] = purchase_counts.get(key, 0) + 1
+        elif kind == "zwrot":
+            refund_counts[key] = refund_counts.get(key, 0) + 1
+
+    cancel_remaining: Dict[Tuple[str, str], int] = {}
+    for key, p_count in purchase_counts.items():
+        r_count = refund_counts.get(key, 0)
+        cancel_remaining[key] = min(p_count, r_count)
+
+    for item in history_records:
+        kind = _normalize_scraped_value(item.get("kind", ""))
+        title = _sanitize_title(item.get("title", ""))
+        amount = _normalize_scraped_value(item.get("price", ""))
+        date_text = _extract_date_only(_normalize_scraped_value(item.get("date_text", "")))
+        tx = _normalize_scraped_value(item.get("transaction_number", ""))
+        if not tx:
+            tx = _fallback_tx_from_order_url(item.get("order_url", ""))
+        country = _normalize_scraped_value(item.get("country", ""))
+        amount_key = _amount_abs_key(amount)
+
+        title_key = _normalize_title_key(title)
+        row_key = (date_text.lower(), title_key, amount_key)
+        if kind == "sprzedaz":
+            if tx and tx in sales_tx_set:
+                continue
+            if row_key in sales_tuple_set:
+                continue
+            ws_sales.append(
+                [
+                    date_text,
+                    title,
+                    _to_excel_amount(amount),
+                    tx,
+                    country,
+                    _shipping_flag_from_country(country) if country else "",
+                ]
+            )
+            if tx:
+                sales_tx_set.add(tx)
+            sales_tuple_set.add(row_key)
+            added_sales += 1
+        elif kind == "zakup":
+            balance_key = (title_key, _amount_abs_key(amount))
+            if cancel_remaining.get(balance_key, 0) > 0:
+                cancel_remaining[balance_key] -= 1
+                continue
+            if row_key in purchase_tuple_set:
+                continue
+            ws_purchases.append([date_text, title, title, _to_excel_abs_amount(amount)])
+            purchase_tuple_set.add(row_key)
+            added_purchases += 1
+        elif kind == "usluga":
+            service_row_key = (date_text.lower(), title_key, amount_key)
+            if service_row_key in services_tuple_set:
+                continue
+            ws_services.append([date_text, title, _to_excel_abs_amount(amount)])
+            services_tuple_set.add(service_row_key)
+            added_services += 1
+        elif kind == "zwrot":
+            balance_key = (title_key, _amount_abs_key(amount))
+            if cancel_remaining.get(balance_key, 0) > 0:
+                cancel_remaining[balance_key] -= 1
+                continue
+            amount_display = _to_excel_abs_amount(amount)
+            refund_amount_key = _amount_abs_key(str(amount_display if amount_display is not None else ""))
+            refund_row_key = (date_text.lower(), title_key, refund_amount_key)
+            if refund_row_key in refunds_tuple_set:
+                continue
+            ws_refunds.append([date_text, title, amount_display])
+            refunds_tuple_set.add(refund_row_key)
+            added_refunds += 1
+
+    return added_sales, added_purchases, added_services, added_refunds
+
+
+def _column_letter_by_header(ws, header_name: str) -> Optional[str]:
+    idx = _find_column_index(ws, header_name)
+    if idx is None:
+        return None
+    return get_column_letter(idx + 1)
+
+
+def _update_summary(ws_summary, ws_sales, ws_purchases, ws_services, ws_refunds) -> None:
     rows = list(ws_summary.iter_rows(values_only=True))
     if rows:
         ws_summary.delete_rows(1, ws_summary.max_row)
     ws_summary.append(["pozycja", "suma"])
 
-    sales_total = _sum_sheet_amount(ws_sales, "kwota")
-    sales_international = _sum_sales_international(ws_sales)
-    purchases_total = _sum_sheet_amount(ws_purchases, "kwota_lacznie")
-    services_total = _sum_sheet_amount(ws_services, "kwota")
+    sales_amount_col = _column_letter_by_header(ws_sales, "kwota")
+    sales_ship_col = _column_letter_by_header(ws_sales, "wysylka_zagraniczna")
+    purchases_amount_col = _column_letter_by_header(ws_purchases, "kwota_lacznie")
+    services_amount_col = _column_letter_by_header(ws_services, "kwota")
+    refunds_amount_col = _column_letter_by_header(ws_refunds, "kwota")
 
-    ws_summary.append(["Suma sprzedazy", _format_sum(sales_total)])
-    ws_summary.append(["Suma sprzedazy zagraniczna", _format_sum(sales_international)])
-    ws_summary.append(["Suma zakupow", _format_sum(purchases_total)])
-    ws_summary.append(["Suma uslug elektronicznych", _format_sum(services_total)])
+    sales_formula = f"=SUM(Sprzedaze!{sales_amount_col}:{sales_amount_col})" if sales_amount_col else "=0"
+    if sales_amount_col and sales_ship_col:
+        sales_int_formula = (
+            f'=SUMIFS(Sprzedaze!{sales_amount_col}:{sales_amount_col},'
+            f'Sprzedaze!{sales_ship_col}:{sales_ship_col},"tak")'
+        )
+    else:
+        sales_int_formula = "=0"
+    purchases_formula = f"=SUM(Zakupy!{purchases_amount_col}:{purchases_amount_col})" if purchases_amount_col else "=0"
+    services_formula = (
+        f"=SUM('Uslugi elektroniczne'!{services_amount_col}:{services_amount_col})" if services_amount_col else "=0"
+    )
+    refunds_formula = f"=SUM(Zwroty!{refunds_amount_col}:{refunds_amount_col})" if refunds_amount_col else "=0"
 
-
-def _sum_sheet_amount(ws, header_name: str) -> float:
-    idx = _find_column_index(ws, header_name)
-    if idx is None:
-        return 0.0
-    total = 0.0
-    for row in ws.iter_rows(min_row=2, values_only=True):
-        if not row:
-            continue
-        value = row[idx] if idx < len(row) else None
-        num = parse_money_to_float(str(value or ""))
-        if num is not None:
-            total += num
-    return total
-
-
-def _sum_sales_international(ws) -> float:
-    idx_amount = _find_column_index(ws, "kwota")
-    idx_ship = _find_column_index(ws, "wysylka_zagraniczna")
-    if idx_amount is None or idx_ship is None:
-        return 0.0
-    total = 0.0
-    for row in ws.iter_rows(min_row=2, values_only=True):
-        if not row:
-            continue
-        ship = str(row[idx_ship] or "").strip().lower()
-        if ship != "tak":
-            continue
-        amount = row[idx_amount] if idx_amount < len(row) else None
-        num = parse_money_to_float(str(amount or ""))
-        if num is not None:
-            total += num
-    return total
-
-
-def _format_sum(value: float) -> str:
-    return f"{value:.2f}".replace(".", ",") + " zl" if value else "0,00 zl"
+    ws_summary.append(["Suma sprzedazy", sales_formula])
+    ws_summary.append(["Suma sprzedazy zagraniczna", sales_int_formula])
+    ws_summary.append(["Suma zakupow", purchases_formula])
+    ws_summary.append(["Suma uslug elektronicznych", services_formula])
+    ws_summary.append(["Suma zwrotow", refunds_formula])
 
 
 if __name__ == "__main__":

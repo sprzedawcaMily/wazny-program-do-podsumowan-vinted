@@ -4,7 +4,8 @@
   "version": "1.0.0",
   "description": "Puppeteer scraper for Vinted orders",
   "scripts": {
-    "scrape:vinted": "node vinted_scrape.js"
+    "scrape:vinted": "node vinted_scrape.js",
+    "scrape:history": "node vinted_scrape.js --mode history"
   },
   "dependencies": {
     "puppeteer": "^22.9.0"

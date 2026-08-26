@@ -1,0 +1,14 @@
+2026/05/03-17:06:48.673 2fe8 Reusing MANIFEST E:\gitbun\porgram do podsyumowan\wazny program do podsumowan vinted\.vinted-browser-profile\Default\IndexedDB\https_www.vinted.pl_0.indexeddb.leveldb/MANIFEST-000001
+2026/05/03-17:06:48.673 2fe8 Recovering log #570
+2026/05/03-17:06:48.674 2fe8 Reusing old log E:\gitbun\porgram do podsyumowan\wazny program do podsumowan vinted\.vinted-browser-profile\Default\IndexedDB\https_www.vinted.pl_0.indexeddb.leveldb/000570.log 
+2026/05/03-17:06:48.674 2fe8 Delete type=2 #569
+2026/05/03-17:06:49.878 2bf0 Level-0 table #575: started
+2026/05/03-17:06:49.929 2bf0 Level-0 table #575: 13003 bytes OK
+2026/05/03-17:06:49.953 2bf0 Delete type=0 #570
+2026/05/03-17:06:49.953 314c Manual compaction at level-0 from '\x00\xc4\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00\xc5\x00\x00\x00' @ 0 : 0; will stop at '\x00\xc4\x01\x03\x03\x00\x00\x00\x00\x00\x00\xf0?' @ 30803 : 1
+2026/05/03-17:06:49.954 314c Compacting 1@0 + 1@1 files
+2026/05/03-17:06:50.298 314c Generated table #576@0: 5867 keys, 548532 bytes
+2026/05/03-17:06:50.298 314c Compacted 1@0 + 1@1 files => 548532 bytes
+2026/05/03-17:06:50.343 314c compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/05/03-17:06:50.343 314c Delete type=2 #575
+2026/05/03-17:06:50.344 3968 Manual compaction at level-0 from '\x00\xc4\x01\x03\x03\x00\x00\x00\x00\x00\x00\xf0?' @ 30803 : 1 .. '\x00\xc5\x00\x00\x00' @ 0 : 0; will stop at (end)

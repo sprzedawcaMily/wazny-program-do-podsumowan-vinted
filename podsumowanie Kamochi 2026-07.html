@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="pl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vinted - Podsumowanie</title>
+    <style>
+        :root {
+            color-scheme: light;
+            font-family: Arial, sans-serif;
+            background: #f6f7f9;
+            color: #1b1f24;
+        }
+        body {
+            margin: 24px;
+        }
+        h1 {
+            margin-bottom: 16px;
+        }
+        h2 {
+            margin: 24px 0 8px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #ffffff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        th, td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #e2e5ea;
+            text-align: left;
+            vertical-align: top;
+            font-size: 14px;
+        }
+        th {
+            background: #eef1f6;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        tbody tr:nth-child(even) {
+            background: #f9fafb;
+        }
+    </style>
+</head>
+<body>
+    <h1>Vinted - Podsumowanie</h1>
+    <h2>Podsumowanie</h2><table><thead><tr><th>pozycja</th><th>suma</th></tr></thead><tbody><tr><td>Suma sprzedazy</td><td>=SUM(Sprzedaze!C:C)</td></tr>
+<tr><td>Suma sprzedazy zagraniczna</td><td>=SUMIFS(Sprzedaze!C:C,Sprzedaze!F:F,&quot;tak&quot;)</td></tr>
+<tr><td>Suma zakupow</td><td>=SUM(Zakupy!D:D)</td></tr>
+<tr><td>Suma uslug elektronicznych</td><td>=SUM('Uslugi elektroniczne'!C:C)</td></tr>
+<tr><td>Suma zwrotow</td><td>=SUM(Zwroty!C:C)</td></tr></tbody></table><h2>Zakupy</h2><table><thead><tr><th>data</th><th>tytul_oryginal</th><th>tytul_pl</th><th>kwota_lacznie</th></tr></thead><tbody><tr><td>01.07.2026</td><td>plecak ed hardy duży pojemny</td><td>plecak ed hardy duży pojemny</td><td>44.05</td></tr>
+<tr><td>05.07.2026</td><td>boxy hoodie</td><td>pudełkowa bluza z kapturem</td><td>168.25</td></tr>
+<tr><td>07.07.2026</td><td>Miami ink. Hat</td><td>Atrament Miami. Kapelusz</td><td>36.24</td></tr>
+<tr><td>07.07.2026</td><td>Sluneční clona do auta</td><td>Samochodowa osłona przeciwsłoneczna</td><td>56.86</td></tr>
+<tr><td>08.07.2026</td><td>Anchor Blue Baggy Jorts Vintage 90s Y2K Skate Shorts Denim</td><td>Anchor Blue Baggy Jorts Vintage 90s Y2K Spodenki do skateboardingu, jeansowe</td><td>42.25</td></tr>
+<tr><td>08.07.2026</td><td>Oakley hátizsák</td><td>Plecak Oakley</td><td>166.97</td></tr>
+<tr><td>16.07.2026</td><td>Cool oldskool jorts</td><td>Fajne oldschoolowe jorty</td><td>54.89</td></tr>
+<tr><td>22.07.2026</td><td>2Pac jeans</td><td>Dżinsy 2Paca</td><td>39.9</td></tr>
+<tr><td>23.07.2026</td><td>bluza moro sport</td><td>bluza moro sport</td><td>31.49</td></tr>
+<tr><td>26.07.2026</td><td>Levi's Silvertab</td><td>Silvertab Levi’sa</td><td>60.05</td></tr>
+<tr><td>29.07.2026</td><td>Spodnie Męskie</td><td>Spodnie Męskie</td><td>36.74</td></tr>
+<tr><td>29.07.2026</td><td>Liquid Blue Family Guy T-shirt - Very good condition, Size M, White</td><td>Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</td><td>55.65</td></tr>
+<tr><td>31.07.2026</td><td>Jeansy męskie</td><td>Jeansy męskie</td><td>52.49</td></tr>
+<tr><td>01.08.2026</td><td>Spodnie</td><td>Spodnie</td><td>46.7</td></tr></tbody></table><h2>Sprzedaze</h2><table><thead><tr><th>data</th><th>tytul_oryginal</th><th>kwota</th><th>numer_transakcji</th><th>kraj_kupujacego</th><th>wysylka_zagraniczna</th></tr></thead><tbody><tr><td>01.07.2026</td><td>Koszula enyce M</td><td>113.43</td><td>20484866403</td><td></td><td></td></tr>
+<tr><td>01.07.2026</td><td>fishbone Koszulka XXL Baggy szerokie jnco</td><td>57.84</td><td>19982189885</td><td></td><td></td></tr>
+<tr><td>01.07.2026</td><td>Affliction Szorty 50 | W34 Affliction tapout</td><td>100.0</td><td>20556717145</td><td></td><td></td></tr>
+<tr><td>01.07.2026</td><td>Tapout Koszulka L Affliction tapout</td><td>140.0</td><td>20423361441</td><td></td><td></td></tr>
+<tr><td>03.07.2026</td><td>Mass Denim Koszula M Jnco baggy hiphop</td><td>76.9</td><td>20624147125</td><td></td><td></td></tr>
+<tr><td>05.07.2026</td><td>Ceglaste szerokie spodnie loop skatebording M</td><td>18.29</td><td>20606426200</td><td></td><td></td></tr>
+<tr><td>05.07.2026</td><td>fishbone Plecak Uniwersalny Jnco baggy hiphop</td><td>49.0</td><td>20644876895</td><td></td><td></td></tr>
+<tr><td>08.07.2026</td><td>Clinic Spodnie L Jnco baggy hiphop</td><td>450.0</td><td>20490024359</td><td></td><td></td></tr>
+<tr><td>08.07.2026</td><td>Ccm Koszulka M Jnco baggy hiphop</td><td>79.0</td><td>20739762561</td><td></td><td></td></tr>
+<tr><td>09.07.2026</td><td>etnies Bluza XXL Jnco baggy hiphop</td><td>120.0</td><td>20796503665</td><td></td><td></td></tr>
+<tr><td>09.07.2026</td><td>Screw Spodnie L Jnco baggy hiphop</td><td>70.0</td><td>20763281193</td><td></td><td></td></tr>
+<tr><td>12.07.2026</td><td>oakley Szorty XXL Gorpcore</td><td>72.02</td><td>20773728365</td><td></td><td></td></tr>
+<tr><td>13.07.2026</td><td>Liquid Blue T-shirt L Archive Ed hardy</td><td>60.0</td><td>20846448793</td><td></td><td></td></tr>
+<tr><td>13.07.2026</td><td>Raw Blue Szorty 44 | W28 Jnco baggy hiphop</td><td>64.7</td><td>20600727765</td><td></td><td></td></tr>
+<tr><td>14.07.2026</td><td>Ruff ryders Spodnie 50 | W35 Jnco baggy hiphop</td><td>22.0</td><td>20824211622</td><td></td><td></td></tr>
+<tr><td>15.07.2026</td><td>K1X Bluza XXL Jnco baggy hiphop</td><td>40.0</td><td>20731387228</td><td></td><td></td></tr>
+<tr><td>15.07.2026</td><td>Really Point Bluza L Archive Ed hardy dizajner</td><td>254.0</td><td>20691682905</td><td></td><td></td></tr>
+<tr><td>16.07.2026</td><td>Ecko Unltd</td><td>35.0</td><td>20849766687</td><td></td><td></td></tr>
+<tr><td>16.07.2026</td><td>Dada Bluza L Jnco baggy</td><td>130.0</td><td>20769371850</td><td></td><td></td></tr>
+<tr><td>17.07.2026</td><td>oakley Okulary Uniwersalny Archive Ed hardy</td><td>99.0</td><td>20700869985</td><td></td><td></td></tr>
+<tr><td>20.07.2026</td><td>Screv Szorty 4XL Jnco baggy hiphop</td><td>76.15</td><td>20649465441</td><td></td><td></td></tr>
+<tr><td>22.07.2026</td><td>cropp stara koszulka XXL ragge</td><td>5.0</td><td>20958594295</td><td></td><td></td></tr>
+<tr><td>22.07.2026</td><td>Akademiks og szerokie spodnie print z tyłu 36</td><td>150.0</td><td>20902758336</td><td></td><td></td></tr>
+<tr><td>27.07.2026</td><td>Ecko Unltd</td><td>130.0</td><td>21089448047</td><td></td><td></td></tr>
+<tr><td>27.07.2026</td><td>Demonologia Bluza M Jnco baggy hiphop</td><td>50.0</td><td>20849749652</td><td></td><td></td></tr>
+<tr><td>28.07.2026</td><td>Sir Beni Miles bezowe szelesty size L bez wad</td><td>83.2</td><td>21059276070</td><td></td><td></td></tr>
+<tr><td>30.07.2026</td><td>Vokal Szorty 58 | W42 Jnco baggy hiphop</td><td>109.0</td><td>21130950493</td><td></td><td></td></tr>
+<tr><td>30.07.2026</td><td>Southpole Spodnie 50 | W34 Jnco baggy hiphop</td><td>220.0</td><td>20853503402</td><td></td><td></td></tr>
+<tr><td>30.07.2026</td><td>Ecko Unltd</td><td>50.0</td><td>21104103866</td><td></td><td></td></tr>
+<tr><td>31.07.2026</td><td>Ecko unltd long sliv zolty obdarte mankiety meta odrywa sie XL</td><td>65.51</td><td>20868455750</td><td></td><td></td></tr>
+<tr><td>31.07.2026</td><td>Bsat Spodnie 52 | W36 Jnco baggy hiphop</td><td>201.19</td><td>21077143439</td><td></td><td></td></tr></tbody></table><h2>Uslugi elektroniczne</h2><table><thead><tr><th>data</th><th>usluga</th><th>kwota</th></tr></thead><tbody><tr><td>05.07.2026</td><td>Usluga 7-dniowa 24</td><td>22.45</td></tr>
+<tr><td>13.07.2026</td><td>Usluga 7-dniowa 24</td><td>22.45</td></tr>
+<tr><td>20.07.2026</td><td>Usluga 7-dniowa 24</td><td>22.45</td></tr>
+<tr><td>27.07.2026</td><td>Usluga 7-dniowa 24</td><td>22.45</td></tr></tbody></table><h2>Zwroty</h2><table><thead><tr><th>data</th><th>tytul</th><th>kwota</th></tr></thead><tbody></tbody></table>
+</body>
+</html>
