@@ -9,7 +9,9 @@ const COMPLETED_FILTER = "[data-testid=\"my-orders-filter-completed\"]";
 const ORDER_ITEM = "[data-testid=\"my-orders-item\"]";
 const ORDER_TITLE = "[data-testid=\"my-orders-item--title\"]";
 const ORDER_PRICE = "h3";
-const LOCATION_SELECTOR = "span[aria-label^=\"Members location\"]";
+const LOCATION_SELECTOR = '[aria-label^="Members location"]';
+const INBOX_READY_SELECTOR = '.web_ui__Bubble__bubble, [aria-label^="Members location"]';
+const WALLET_ITEM_SELECTOR = 'li[class*="pile__element"]';
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -480,31 +482,59 @@ async function gotoWithFallback(page, url) {
   }
 }
 
-async function getLocationLabel(page) {
-  for (let attempt = 0; attempt < 5; attempt += 1) {
-    try {
-      await page.waitForSelector(LOCATION_SELECTOR, { timeout: 1500 });
-    } catch {
-      // Ignore and try scrolling below.
+async function scrollConversationToStart(page) {
+  await page.evaluate(() => {
+    window.scrollTo(0, 0);
+    const scrollables = Array.from(document.querySelectorAll("*")).filter(
+      (el) => el.scrollHeight > el.clientHeight + 40
+    );
+    for (const el of scrollables) {
+      el.scrollTop = 0;
     }
+    const locationNode = document.querySelector('[aria-label^="Members location"]');
+    if (locationNode) {
+      locationNode.scrollIntoView({ block: "center" });
+    }
+  });
+}
 
-    const label = await page
-      .$eval(LOCATION_SELECTOR, (el) => el.getAttribute("aria-label") || "")
-      .catch(() => "");
-    if (label) return label;
-
-    await page.evaluate(() => {
-      window.scrollTo(0, 0);
-      const scrollables = Array.from(document.querySelectorAll("*")).filter(
-        (el) => el.scrollHeight > el.clientHeight + 20
-      );
-      for (const el of scrollables) {
-        el.scrollTop = 0;
+async function readLocationLabel(page) {
+  return page.evaluate(() => {
+    const nodes = Array.from(document.querySelectorAll('[aria-label^="Members location"]'));
+    for (const node of nodes) {
+      const aria = String(node.getAttribute("aria-label") || "").trim();
+      if (aria) return aria;
+      const text = String(node.textContent || "").replace(/\u00a0/g, " ").trim();
+      if (text) return `Members location ${text}`;
+    }
+    const bubbles = Array.from(document.querySelectorAll(".web_ui__Bubble__bubble"));
+    for (const bubble of bubbles) {
+      const spans = Array.from(bubble.querySelectorAll("span.web_ui__Text__body"));
+      for (const span of spans) {
+        const text = String(span.textContent || "").replace(/\u00a0/g, " ").trim();
+        if (!text || /ostatnie logowanie|last seen|last logged/i.test(text)) {
+          continue;
+        }
+        return `Members location ${text}`;
       }
-    });
-    await sleep(600);
-  }
+    }
+    return "";
+  });
+}
 
+async function getLocationLabel(page) {
+  await page.waitForSelector(INBOX_READY_SELECTOR, { timeout: 10000 }).catch(() => {});
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    await scrollConversationToStart(page);
+    try {
+      await page.waitForSelector(LOCATION_SELECTOR, { timeout: 1200 });
+    } catch {
+      // Keep scrolling to the start of the thread — the intro bubble is virtualized.
+    }
+    const label = await readLocationLabel(page);
+    if (label) return label;
+    await sleep(700);
+  }
   return "";
 }
 
@@ -750,6 +780,36 @@ async function collectHistoryForOrderType(page, orderType, targetMonth) {
   return results;
 }
 
+async function describeWalletPage(page) {
+  return page.evaluate(() => {
+    const text = String(document.body && document.body.innerText ? document.body.innerText : "").slice(0, 2500);
+    const lis = Array.from(document.querySelectorAll("li"))
+      .slice(0, 8)
+      .map((el) => String(el.className || "").trim())
+      .filter(Boolean);
+    return {
+      title: document.title || "",
+      url: location.href,
+      loginHint: /zaloguj|zarejestruj|dołącz|dolacz|sign in|log in/i.test(text),
+      sampleLiClasses: lis,
+    };
+  });
+}
+
+async function waitForWalletItems(page) {
+  try {
+    await page.waitForSelector(WALLET_ITEM_SELECTOR, { timeout: 30000 });
+  } catch {
+    const info = await describeWalletPage(page).catch(() => null);
+    const extra = info
+      ? ` URL=${info.url} title=${info.title}` +
+        (info.loginHint ? " Wyglada na strone logowania — zaloguj sie w tym oknie i sprobuj ponownie." : "") +
+        ` Przykladowe class li: ${info.sampleLiClasses.join(" | ") || "(brak)"}`
+      : "";
+    throw new Error(`Nie widze listy historii portfela (selektor: ${WALLET_ITEM_SELECTOR}).${extra}`);
+  }
+}
+
 async function collectWalletHistory(page, targetMonth, orderTypes) {
   const url = walletHistoryUrlForMonth(targetMonth);
   console.log(`Otwieram historie portfela: ${url}`);
@@ -758,26 +818,27 @@ async function collectWalletHistory(page, targetMonth, orderTypes) {
     throw new Error("Nie udalo sie otworzyc strony historii portfela.");
   }
 
-  const itemSelector = "li.pile__element a.web_ui__Cell__link";
-  await page.waitForSelector(itemSelector, { timeout: 30000 });
+  await waitForWalletItems(page);
 
   const seen = new Map();
   let stagnant = 0;
   for (let i = 0; i < MAX_SCROLLS; i += 1) {
-    const items = await page.$$eval(itemSelector, (nodes) =>
+    const items = await page.$$eval(WALLET_ITEM_SELECTOR, (nodes) =>
       nodes.map((node) => {
         const titleEl = node.querySelector(".web_ui__Cell__title");
         const bodyEl = node.querySelector(".web_ui__Cell__body");
         const amountEl = node.querySelector(".web_ui__Cell__suffix h2");
-        const suffixDiv = node.querySelector(".web_ui__Cell__suffix div");
-        const href = node.getAttribute("href") || "";
+        const dateEl = node.querySelector(".web_ui__Cell__suffix span");
+        const linkEl = node.querySelector("a.web_ui__Cell__link, a[href^='/inbox/'], a[href]");
+        const href = linkEl ? linkEl.getAttribute("href") || "" : "";
         const amount = (amountEl ? amountEl.textContent : "").replace(/\u00a0/g, " ").trim();
-        const suffixText = (suffixDiv ? suffixDiv.textContent : "").replace(/\u00a0/g, " ").trim();
-        const dateLabel = suffixText.replace(amount, "").replace(/\s+/g, " ").trim();
+        const dateLabel = (dateEl ? dateEl.textContent : "").replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
+        const kindLabel = titleEl ? titleEl.textContent.trim() : "";
+        const bodyTitle = bodyEl ? bodyEl.textContent.trim() : "";
         return {
           href,
-          kind_label: titleEl ? titleEl.textContent.trim() : "",
-          title: bodyEl ? bodyEl.textContent.trim() : "",
+          kind_label: kindLabel,
+          title: bodyTitle || kindLabel,
           amount,
           date_label: dateLabel,
         };
@@ -877,26 +938,27 @@ async function collectWalletHistory(page, targetMonth, orderTypes) {
   }
 
   const maxChecks = Math.min(salesWithLinks.length, Math.max(0, WALLET_DETAIL_CHECKS));
-  console.log(`Uzupelniam numery transakcji z detali wallet: ${maxChecks}/${salesWithLinks.length}`);
+  console.log(`Otwieram inbox sprzedazy, zeby wyciagnac kraj kupujacego: ${maxChecks}/${salesWithLinks.length}`);
   for (let i = 0; i < maxChecks; i += 1) {
     const row = salesWithLinks[i];
     const opened = await gotoWithFallback(page, row.order_url);
     if (!opened) {
-      console.log(`[wallet-details] pominieto (blad otwarcia): ${row.order_url}`);
+      console.log(`[wallet-inbox] pominieto (blad otwarcia): ${row.order_url}`);
       continue;
     }
-    await sleep(900);
+    await page.waitForSelector(INBOX_READY_SELECTOR, { timeout: 10000 }).catch(() => {});
+    await sleep(800);
     const pageText = await page.evaluate(() => document.body.innerText || "");
     const txNumber = extractTransactionNumber(pageText);
     if (txNumber) {
       row.transaction_number = txNumber;
     }
-    if (!row.country) {
-      const locationLabel = await getLocationLabel(page);
-      row.country = extractCountry(locationLabel);
-    }
+    const locationLabel = await getLocationLabel(page);
+    row.country = extractCountry(locationLabel);
     console.log(
-      `[wallet-details] ${i + 1}/${maxChecks} tx=${row.transaction_number || "-"} kraj=${row.country || "-"}`
+      `[wallet-inbox] ${i + 1}/${maxChecks} ${row.title || "(brak tytulu)"} kraj=${row.country || "-"} tx=${
+        row.transaction_number || "-"
+      }`
     );
   }
 

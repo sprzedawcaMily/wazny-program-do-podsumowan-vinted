@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="pl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vinted - Podsumowanie</title>
+    <style>
+        :root {
+            color-scheme: light;
+            font-family: Arial, sans-serif;
+            background: #f6f7f9;
+            color: #1b1f24;
+        }
+        body {
+            margin: 24px;
+        }
+        h1 {
+            margin-bottom: 16px;
+        }
+        h2 {
+            margin: 24px 0 8px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #ffffff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        th, td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #e2e5ea;
+            text-align: left;
+            vertical-align: top;
+            font-size: 14px;
+        }
+        th {
+            background: #eef1f6;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        tbody tr:nth-child(even) {
+            background: #f9fafb;
+        }
+    </style>
+</head>
+<body>
+    <h1>Vinted - Podsumowanie</h1>
+    <h2>Podsumowanie</h2><table><thead><tr><th>pozycja</th><th>suma</th></tr></thead><tbody><tr><td>Suma sprzedazy</td><td>=SUM(Sprzedaze!C:C)</td></tr>
+<tr><td>Suma sprzedazy zagraniczna</td><td>=SUMIFS(Sprzedaze!C:C,Sprzedaze!F:F,&quot;tak&quot;)</td></tr>
+<tr><td>Suma zakupow</td><td>=SUM(Zakupy!D:D)</td></tr>
+<tr><td>Suma uslug elektronicznych</td><td>=SUM('Uslugi elektroniczne'!C:C)</td></tr>
+<tr><td>Suma zwrotow</td><td>=SUM(Zwroty!C:C)</td></tr></tbody></table><h2>Zakupy</h2><table><thead><tr><th>data</th><th>tytul_oryginal</th><th>tytul_pl</th><th>kwota_lacznie</th></tr></thead><tbody><tr><td>03.08.2026</td><td>Vintage Y2K jeans graphic pockets</td><td>Kieszenie graficzne w stylu vintage jeansów Y2K</td><td>59.3</td></tr>
+<tr><td>03.08.2026</td><td>Retro MMA trøje</td><td>Koszulka retro MMA</td><td>55.68</td></tr>
+<tr><td>03.08.2026</td><td>Blugi</td><td>Dżinsy</td><td>42.63</td></tr>
+<tr><td>04.08.2026</td><td>Bluza</td><td>Bluzka</td><td>20.45</td></tr>
+<tr><td>04.08.2026</td><td>Rifľové kraťasy VOKAL</td><td>Szorty jeansowe VOKAL</td><td>31.6</td></tr>
+<tr><td>05.08.2026</td><td>Hard Rock Cafe vintage zip hoodie y2k avant garde</td><td>Zapinana na zamek bluza z kapturem w stylu vintage Hard Rock Cafe Y2K awangarda</td><td>40.4</td></tr>
+<tr><td>06.08.2026</td><td>Męskie jeansy</td><td>Męskie jeansy</td><td>43.25</td></tr>
+<tr><td>07.08.2026</td><td>Baggy jeans</td><td>Luźne dżinsy</td><td>80.09</td></tr>
+<tr><td>07.08.2026</td><td>spodnie</td><td>spodnie</td><td>198.95</td></tr>
+<tr><td>09.08.2026</td><td>Granatowy sweter Vivienne Westwood MAN | Rozmiar XXL | Made in Italy</td><td>Granatowy sweter Vivienne Westwood MAN | Rozmiar XXL | Made in Italy</td><td>44.59</td></tr>
+<tr><td>09.08.2026</td><td>Avirex Leather Jackey</td><td>Kurtka skórzana Avirex</td><td>388.36</td></tr>
+<tr><td>09.08.2026</td><td>Torebka trójwymiarowa</td><td>Torebka trójwymiarowa</td><td>41.45</td></tr>
+<tr><td>09.08.2026</td><td>Bluza</td><td>Bluzka</td><td>30.95</td></tr>
+<tr><td>09.08.2026</td><td>Bluza de trening</td><td>Bluza szkolenia</td><td>29.55</td></tr>
+<tr><td>10.08.2026</td><td>Férfi farmer</td><td>Męskie dżinsy</td><td>81.09</td></tr>
+<tr><td>10.08.2026</td><td>Moške hlače Blind XL</td><td>Spodnie męskie Blind XL</td><td>54.96</td></tr>
+<tr><td>10.08.2026</td><td>Majica xl Ecko Unltd</td><td>Majica xl Ecko Unltd</td><td>29.83</td></tr>
+<tr><td>10.08.2026</td><td>Rydel Hause</td><td>Do domu Rydla</td><td>46.7</td></tr>
+<tr><td>11.08.2026</td><td>Koszula</td><td>Koszula</td><td>20.45</td></tr>
+<tr><td>12.08.2026</td><td>Bluza ecko untld rozmiar m</td><td>Bluza ecko untld rozmiar m</td><td>57.2</td></tr>
+<tr><td>12.08.2026</td><td>Affliction kääntöpipo</td><td>Czapka uciskowa</td><td>61.24</td></tr>
+<tr><td>13.08.2026</td><td>Marc Ecko Cut &amp; Sew Skull Embroidered Blazer Jacket Gray Pinstripe M</td><td>Marc Ecko Cut &amp; Sew – Marynarka z haftowaną czaszką, szara w prążki M</td><td>151.7</td></tr>
+<tr><td>14.08.2026</td><td>Zestaw 2 przedmiotów</td><td>Zestaw 2 przedmiotów</td><td>46.3</td></tr>
+<tr><td>15.08.2026</td><td>Plecak kolekcjonerski Harley Davididson</td><td>Plecak kolekcjonerski Harley Davididson</td><td>135.95</td></tr>
+<tr><td>15.08.2026</td><td>Kurtka z lat 90 jeansowa fishbone s90 opium y2k</td><td>Kurtka z lat 90 jeansowa fishbone s90 opium y2k</td><td>47.15</td></tr>
+<tr><td>16.08.2026</td><td>Zestaw 2 przedmiotów</td><td>Zestaw 2 przedmiotów</td><td>90.03</td></tr>
+<tr><td>16.08.2026</td><td>very rare enyce jeans from 2000</td><td>Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</td><td>69.85</td></tr>
+<tr><td>16.08.2026</td><td>Eredeti Artful Dodger pulcsib</td><td>Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</td><td>64.47</td></tr>
+<tr><td>17.08.2026</td><td>Rydelhouse sweatshirt</td><td>Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</td><td>55.42</td></tr>
+<tr><td>17.08.2026</td><td>Spodnie rozm 32/33 Rydel Hose</td><td>Spodnie rozm 32/33 Rydel Hose</td><td>30.95</td></tr>
+<tr><td>17.08.2026</td><td>OG Jnco warrior</td><td>I wojownik Jnco</td><td>230.45</td></tr>
+<tr><td>17.08.2026</td><td>Uf Pro jakke</td><td>Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</td><td>101.7</td></tr>
+<tr><td>17.08.2026</td><td>Bluza Patagonia Regenerative Organic Certified Cotton Crewneck Sweatshirt</td><td>Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</td><td>41.45</td></tr>
+<tr><td>17.08.2026</td><td>Kraťasy Flava Brand</td><td>Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</td><td>51.31</td></tr>
+<tr><td>19.08.2026</td><td>Porter väska portfölj</td><td>Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</td><td>255.39</td></tr>
+<tr><td>19.08.2026</td><td>Panský svetr</td><td>Sweter męski</td><td>24.1</td></tr>
+<tr><td>19.08.2026</td><td>AXR Xzavier T-paita</td><td>Koszulka AXR Xzavier</td><td>66.22</td></tr>
+<tr><td>19.08.2026</td><td>Harley Davidson majica z dolgimi rokavi</td><td>Koszulka „Harley Davidson z długim rękawem</td><td>57.63</td></tr>
+<tr><td>19.08.2026</td><td>Supreme pulóver</td><td>Świetny sweter</td><td>27.03</td></tr>
+<tr><td>19.08.2026</td><td>Ecko Unltd. Cargo Shorts Beige | Y2k Swag Emo Alt 2000s</td><td>Ecko Unltd. Spodenki cargo beżowe | Y2k Swag Emo Alt 2000s</td><td>30.68</td></tr>
+<tr><td>19.08.2026</td><td>Zestaw 2 przedmiotów</td><td>Zestaw 2 przedmiotów</td><td>62.45</td></tr>
+<tr><td>19.08.2026</td><td>Bluza „stoprocent”</td><td>Bluzka „w stu procentach”</td><td>20.45</td></tr>
+<tr><td>19.08.2026</td><td>T-shirt Ecko Unltd</td><td>T-shirt Ecko Unltd</td><td>15.2</td></tr>
+<tr><td>19.08.2026</td><td>T-shirt med tryck</td><td>T-shirt z nadrukiem</td><td>41.26</td></tr>
+<tr><td>20.08.2026</td><td>Hnědá alt mikina</td><td>Brązowa bluza alternatywna</td><td>84.96</td></tr>
+<tr><td>21.08.2026</td><td>Koszula czarna lot29luxe z kaczorem Duffy</td><td>Koszula czarna lot29luxe z kaczorem Duffy</td><td>38.19</td></tr>
+<tr><td>21.08.2026</td><td>Bluza L</td><td>Bluzka l</td><td>32.75</td></tr>
+<tr><td>24.08.2026</td><td>Zestaw 5 przedmiotów</td><td>Zestaw 5 przedmiotów</td><td>136.78</td></tr>
+<tr><td>25.08.2026</td><td>Zestaw 16 przedmiotów</td><td>Zestaw 16 przedmiotów</td><td>514.93</td></tr>
+<tr><td>25.08.2026</td><td>jeansy dzowny ecko red</td><td>jeansy dzowny ecko red</td><td>33.99</td></tr>
+<tr><td>25.08.2026</td><td>Vintage Platinum FUBU Harlem Globetrotters Baggy Jeans</td><td>Vintage Platinum Baggy Jeans FUBU Harlem Globetrotters</td><td>123.65</td></tr>
+<tr><td>25.08.2026</td><td>buty adidas x dime</td><td>Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</td><td>51.95</td></tr>
+<tr><td>25.08.2026</td><td>Blugi Antik Denim</td><td>Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</td><td>64.44</td></tr>
+<tr><td>25.08.2026</td><td>Jeans</td><td>Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</td><td>67.28</td></tr>
+<tr><td>25.08.2026</td><td>Zestaw 2 przedmiotów</td><td>Zestaw 2 przedmiotów</td><td>75.95</td></tr>
+<tr><td>25.08.2026</td><td>Jeansy</td><td>Jeansy</td><td>20.15</td></tr>
+<tr><td>25.08.2026</td><td>Blugi Y2K vintage cu talie joasă și strasuri</td><td>Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</td><td>55.65</td></tr>
+<tr><td>25.08.2026</td><td>Dziny z USA Earl jeans vel. 8</td><td>Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</td><td>53.44</td></tr>
+<tr><td>25.08.2026</td><td>Marc Ecko lančić-sat</td><td>Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</td><td>27.03</td></tr>
+<tr><td>25.08.2026</td><td>Red by Marc Ecko guldarmband trippel guld armband 3 kedjor</td><td>Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</td><td>53.74</td></tr>
+<tr><td>25.08.2026</td><td>Trika+ kraťasy</td><td>Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</td><td>235.73</td></tr>
+<tr><td>25.08.2026</td><td>Siktovka</td><td>Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</td><td>43.92</td></tr>
+<tr><td>25.08.2026</td><td>Kraťasy</td><td>Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</td><td>114.2</td></tr>
+<tr><td>25.08.2026</td><td>Perfect jeans</td><td>Perfect jeans</td><td>12.1</td></tr>
+<tr><td>25.08.2026</td><td>Killah vintage trapézfarmer</td><td>Killah vintage trapézfarmer</td><td>400.47</td></tr>
+<tr><td>26.08.2026</td><td>Acne studios jedwabny łososiowy kardigan męski rozmiar S</td><td>Acne studios jedwabny łososiowy kardigan męski rozmiar S</td><td>25.7</td></tr>
+<tr><td>26.08.2026</td><td>Zestaw 2 przedmiotów</td><td>Zestaw 2 przedmiotów</td><td>87.8</td></tr>
+<tr><td>26.08.2026</td><td>Bluza Karl Kani z kapturem</td><td>Bluza Karl Kani z kapturem</td><td>99.2</td></tr>
+<tr><td>26.08.2026</td><td>Lekka kurtka na zamek Adidas</td><td>Lekka kurtka na zamek Adidas</td><td>141.2</td></tr>
+<tr><td>27.08.2026</td><td>Sweter męski</td><td>Sweter męski</td><td>41.99</td></tr>
+<tr><td>27.08.2026</td><td>T-shirt czarny</td><td>Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</td><td>41.45</td></tr>
+<tr><td>27.08.2026</td><td>oversize hoodie</td><td>Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</td><td>110.68</td></tr>
+<tr><td>27.08.2026</td><td>T-shirt czarny</td><td>T-shirt czarny</td><td>32.01</td></tr>
+<tr><td>28.08.2026</td><td>Konflic tshirt</td><td>Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</td><td>55.97</td></tr>
+<tr><td>30.08.2026</td><td>Vintage coogi jeans (wymiary w opisie)</td><td>Vintage coogi jeans (wymiary w opisie)</td><td>63.5</td></tr>
+<tr><td>30.08.2026</td><td>Zestaw 2 przedmiotów</td><td>Zestaw 2 przedmiotów</td><td>135.51</td></tr>
+<tr><td>30.08.2026</td><td>Fubu 25 XS Y2K vintage bő szárú hip hop stílusú prémium rövidnadrág</td><td>Error 500 (Server Error)!!1500.That’s an error.There was an error. Please try again later.That’s all we know.</td><td>24.62</td></tr>
+<tr><td>31.08.2026</td><td>Dzwony Levis Silvertab</td><td>Dzwony Levis Silvertab</td><td>51.95</td></tr></tbody></table><h2>Sprzedaze</h2><table><thead><tr><th>data</th><th>tytul_oryginal</th><th>kwota</th><th>numer_transakcji</th><th>kraj_kupujacego</th><th>wysylka_zagraniczna</th></tr></thead><tbody><tr><td>01.08.2026</td><td>fox Bluza M Jnco baggy hiphop</td><td>179.0</td><td>21162437172</td><td>Polska</td><td>nie</td></tr>
+<tr><td>01.08.2026</td><td>Karl Kani Jersey L mega fajny sportowy</td><td>30.0</td><td>20811675150</td><td>Polska</td><td>nie</td></tr>
+<tr><td>03.08.2026</td><td>Tapout DNA signature seeries XL</td><td>185.0</td><td>20895030208</td><td>Finlandia</td><td>tak</td></tr>
+<tr><td>04.08.2026</td><td>Mass Denim Kurtka XL Jnco baggy hiphop</td><td>169.0</td><td>21205184002</td><td>Polska</td><td>nie</td></tr>
+<tr><td>04.08.2026</td><td>Independent Bluza XL Jnco baggy hiphop</td><td>140.0</td><td>20997594386</td><td>Finlandia</td><td>tak</td></tr>
+<tr><td>04.08.2026</td><td>Clinic Bluza M Jnco baggy hiphop</td><td>200.0</td><td>19456305101</td><td>Polska</td><td>nie</td></tr>
+<tr><td>04.08.2026</td><td>Giga stara szeroka bluza croppa L baggy rap. Hip hop. Skate</td><td>36.8</td><td>24028561338</td><td>Polska</td><td>nie</td></tr>
+<tr><td>07.08.2026</td><td>Bsat Spodnie 56 | W40 Jnco baggy hiphop</td><td>135.0</td><td>21338440905</td><td>Polska</td><td>nie</td></tr>
+<tr><td>11.08.2026</td><td>Raw Blue Spodnie L Baggy szerokie jnco</td><td>600.0</td><td>21437241831</td><td>Polska</td><td>nie</td></tr>
+<tr><td>11.08.2026</td><td>Supreme T-shirt M Jnco baggy hiphop</td><td>80.0</td><td>21220864102</td><td>Czechy</td><td>tak</td></tr>
+<tr><td>12.08.2026</td><td>Bronx Spodnie 58 | W42 Jnco baggy hiphop</td><td>160.0</td><td>21432016870</td><td>Polska</td><td>nie</td></tr>
+<tr><td>13.08.2026</td><td>Zero Spodnie 46 | W30 Jnco baggy hiphop</td><td>200.0</td><td>21475271578</td><td>Polska</td><td>nie</td></tr>
+<tr><td>13.08.2026</td><td>Dc Bluza L Jnco baggy hiphop</td><td>160.0</td><td>21483636416</td><td>Polska</td><td>nie</td></tr>
+<tr><td>13.08.2026</td><td>New rock Sneakersy 43 Affliction tapout</td><td>328.98</td><td>21350857759</td><td>Szwecja</td><td>tak</td></tr>
+<tr><td>16.08.2026</td><td>Smet Koszulka L</td><td>50.0</td><td>21487286542</td><td>Polska</td><td>nie</td></tr>
+<tr><td>17.08.2026</td><td>Ecko Unltd</td><td>49.01</td><td>21425545176</td><td></td><td></td></tr>
+<tr><td>17.08.2026</td><td>Metoda Bluza L Jnco baggy hiphop</td><td>100.0</td><td>21514663443</td><td>Polska</td><td>nie</td></tr>
+<tr><td>17.08.2026</td><td>Ecko Unltd. T-shirt L Jnco baggy hiphop</td><td>49.01</td><td>24231770328</td><td>Czechy</td><td>tak</td></tr>
+<tr><td>18.08.2026</td><td>Mass Denim Bluza XXL Jnco baggy hiphop</td><td>350.0</td><td>21534626437</td><td>Polska</td><td>nie</td></tr>
+<tr><td>19.08.2026</td><td>G-unit Chusta Uniwersalny Jnco baggy hiphop</td><td>39.17</td><td>21363628622</td><td>Rumunia</td><td>tak</td></tr>
+<tr><td>21.08.2026</td><td>Karl Kani Chusta Uniwersalny Jnco baggy hiphop</td><td>48.0</td><td>21589967331</td><td>Polska</td><td>nie</td></tr>
+<tr><td>21.08.2026</td><td>Mass Denim Kurtka XL Baggy szerokie jnco</td><td>160.0</td><td>21642381064</td><td>Polska</td><td>nie</td></tr>
+<tr><td>21.08.2026</td><td>Moro jeans kozackie xl</td><td>62.7</td><td>21617558998</td><td>Polska</td><td>nie</td></tr>
+<tr><td>21.08.2026</td><td>Affliction Plecak Uniwersalny Affliction tapout</td><td>69.0</td><td>21661747234</td><td>Polska</td><td>nie</td></tr>
+<tr><td>23.08.2026</td><td>Ecko Unltd</td><td>109.0</td><td>21640783025</td><td></td><td></td></tr>
+<tr><td>23.08.2026</td><td>Clinic Bluza XL Jnco baggy hiphop</td><td>250.0</td><td>21641133252</td><td>Polska</td><td>nie</td></tr>
+<tr><td>23.08.2026</td><td>Mass Denim Jeansy niebieskie model juicy bez wad size L</td><td>200.0</td><td>21661029761</td><td>Polska</td><td>nie</td></tr>
+<tr><td>23.08.2026</td><td>Ecko Unltd. Bluza L Jnco baggy hiphop</td><td>109.0</td><td>24454270825</td><td>Polska</td><td>nie</td></tr>
+<tr><td>25.08.2026</td><td>Bluza Rydelhouse L</td><td>143.82</td><td>21321187135</td><td>Słowenia</td><td>tak</td></tr>
+<tr><td>27.08.2026</td><td>Lee Spodnie 50 | W34 Jnco baggy hiphop</td><td>30.0</td><td>21593760040</td><td>Węgry</td><td>tak</td></tr>
+<tr><td>27.08.2026</td><td>Stoprocent Kurtka L Baggy szerokie jnco</td><td>44.0</td><td>21762864278</td><td>Polska</td><td>nie</td></tr>
+<tr><td>28.08.2026</td><td>Dog nose dla size 146</td><td>40.0</td><td>21686101124</td><td>Polska</td><td>nie</td></tr>
+<tr><td>28.08.2026</td><td>sohk bluza damska</td><td>1374.14</td><td>24433551840</td><td>Czechy</td><td>tak</td></tr>
+<tr><td>29.08.2026</td><td>Makiaveli Bluza XXXL Jnco baggy hiphop</td><td>160.0</td><td>21730894207</td><td>Polska</td><td>nie</td></tr>
+<tr><td>29.08.2026</td><td>Dc Bluza M Jnco baggy hiphop</td><td>150.0</td><td>21634337047</td><td>Czechy</td><td>tak</td></tr>
+<tr><td>29.08.2026</td><td>new rocki new rock damskie za kodtke 41 300</td><td>227.8</td><td>21693309425</td><td>Czechy</td><td>tak</td></tr></tbody></table><h2>Uslugi elektroniczne</h2><table><thead><tr><th>data</th><th>usluga</th><th>kwota</th></tr></thead><tbody><tr><td>03.08.2026</td><td>Usluga 7-dniowa 24</td><td>22.45</td></tr>
+<tr><td>03.08.2026</td><td>Zakup: Ekspozycja</td><td>22.45</td></tr>
+<tr><td>10.08.2026</td><td>Usluga 7-dniowa 24</td><td>22.45</td></tr>
+<tr><td>10.08.2026</td><td>Zakup: Ekspozycja</td><td>22.45</td></tr>
+<tr><td>17.08.2026</td><td>Usluga 7-dniowa 24</td><td>22.45</td></tr>
+<tr><td>17.08.2026</td><td>Zakup: Ekspozycja</td><td>22.45</td></tr>
+<tr><td>24.08.2026</td><td>Usluga 7-dniowa 24</td><td>22.45</td></tr>
+<tr><td>24.08.2026</td><td>Zakup: Ekspozycja</td><td>22.45</td></tr>
+<tr><td>31.08.2026</td><td>Usluga 7-dniowa 24</td><td>22.45</td></tr>
+<tr><td>31.08.2026</td><td>Zakup: Ekspozycja</td><td>22.45</td></tr></tbody></table><h2>Zwroty</h2><table><thead><tr><th>data</th><th>tytul</th><th>kwota</th></tr></thead><tbody><tr><td>14.08.2026</td><td>Roca Wear Bluza zip szara size M bez wad</td><td>13.79</td></tr>
+<tr><td>17.08.2026</td><td>Retro MMA trøje</td><td>15.31</td></tr>
+<tr><td>18.08.2026</td><td>Rød t shirt med print</td><td>32.52</td></tr>
+<tr><td>19.08.2026</td><td>Crown holder jeans</td><td>149.98</td></tr>
+<tr><td>21.08.2026</td><td>Bluza L</td><td>9.81</td></tr></tbody></table>
+</body>
+</html>

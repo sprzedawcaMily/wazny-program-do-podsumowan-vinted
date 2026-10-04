@@ -1232,6 +1232,9 @@ def main() -> None:
     filled_tx_history = _fill_sales_transaction_numbers_from_history(ws_sales, history_records)
     if filled_tx_history:
         print(f"Uzupelniono numery transakcji z historii: {filled_tx_history}")
+    filled_country_history = _fill_sales_countries_from_history(ws_sales, history_records)
+    if filled_country_history:
+        print(f"Uzupelniono kraje kupujacych z historii: {filled_country_history}")
     if hist_added_sales or hist_added_purchases or hist_added_services or hist_added_refunds:
         print(
             "Historia Vinted -> dodano sprzedaze: "
@@ -1429,6 +1432,61 @@ def _fill_sales_transaction_numbers_from_history(ws_sales, history_records: List
             continue
 
         ws_sales.cell(row=row_idx, column=idx_tx + 1).value = candidates.pop(0)
+        updated += 1
+
+    return updated
+
+
+def _fill_sales_countries_from_history(ws_sales, history_records: List[Dict[str, str]]) -> int:
+    idx_date = _find_column_index(ws_sales, "data")
+    idx_title = _find_column_index(ws_sales, "tytul_oryginal")
+    idx_amount = _find_column_index(ws_sales, "kwota")
+    idx_country = _find_column_index(ws_sales, "kraj_kupujacego")
+    idx_ship = _find_column_index(ws_sales, "wysylka_zagraniczna")
+    if idx_title is None or idx_amount is None or idx_country is None:
+        return 0
+
+    by_key: Dict[Tuple[str, str, str], List[str]] = {}
+    by_title_amount: Dict[Tuple[str, str], List[str]] = {}
+    for item in history_records:
+        kind = _normalize_scraped_value(item.get("kind", "")).lower()
+        if kind != "sprzedaz":
+            continue
+        country = _normalize_scraped_value(item.get("country", ""))
+        if not country:
+            continue
+        date_key = _extract_date_only(_normalize_scraped_value(item.get("date_text", ""))).lower()
+        title_key = _normalize_title_key(item.get("title", ""))
+        amount_key = _amount_abs_key(_normalize_scraped_value(item.get("price", "")))
+        by_key.setdefault((date_key, title_key, amount_key), []).append(country)
+        by_title_amount.setdefault((title_key, amount_key), []).append(country)
+
+    updated = 0
+    for row_idx, row in enumerate(ws_sales.iter_rows(min_row=2, values_only=True), start=2):
+        if not row:
+            continue
+        existing = row[idx_country] if idx_country < len(row) else ""
+        if _normalize_scraped_value(existing):
+            continue
+
+        date_val = row[idx_date] if idx_date is not None and idx_date < len(row) else ""
+        title_val = row[idx_title] if idx_title < len(row) else ""
+        amount_val = row[idx_amount] if idx_amount < len(row) else ""
+        key = (
+            _extract_date_only(_normalize_scraped_value(date_val)).lower(),
+            _normalize_title_key(title_val),
+            _amount_abs_key(_normalize_scraped_value(amount_val)),
+        )
+        candidates = by_key.get(key, [])
+        if not candidates:
+            candidates = by_title_amount.get((key[1], key[2]), [])
+        if not candidates:
+            continue
+
+        country = candidates.pop(0)
+        ws_sales.cell(row=row_idx, column=idx_country + 1).value = country
+        if idx_ship is not None:
+            ws_sales.cell(row=row_idx, column=idx_ship + 1).value = _shipping_flag_from_country(country)
         updated += 1
 
     return updated
