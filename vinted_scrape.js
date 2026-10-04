@@ -459,6 +459,34 @@ function normalizeSimple(value) {
     .trim();
 }
 
+function classifyWalletEntryKind(entry = {}) {
+  const kindText = normalizeSimple(entry.kind_label || "");
+  const titleText = normalizeSimple(entry.title || "");
+  const combinedText = `${kindText} ${titleText}`.trim();
+
+  if (!combinedText) {
+    return "";
+  }
+
+  if (/(sprzedane|sprzedaz)/.test(combinedText)) {
+    return "sprzedaz";
+  }
+
+  if (/(zwrot|refund|returned)/.test(combinedText)) {
+    return "zwrot";
+  }
+
+  if (/(zakup|purchase)/.test(combinedText) && /(ekspozycja|usluga|service)/.test(combinedText)) {
+    return "usluga";
+  }
+
+  if (/(zakup|purchase)/.test(combinedText)) {
+    return "zakup";
+  }
+
+  return "";
+}
+
 function monthFromDateText(value) {
   const match = String(value || "").match(/^(\d{2})\.(\d{2})\.(\d{4})/);
   if (!match) return "";
@@ -884,17 +912,8 @@ async function collectWalletHistory(page, targetMonth, orderTypes) {
   const entries = Array.from(seen.values());
   const filtered = [];
   for (const entry of entries) {
-    const kindText = normalizeSimple(entry.kind_label || "");
-    let kind = "";
-    if (kindText.includes("sprzedane")) {
-      kind = "sprzedaz";
-    } else if (kindText.includes("zwrot")) {
-      kind = "zwrot";
-    } else if (kindText.includes("zakup") && kindText.includes("ekspozycja")) {
-      kind = "usluga";
-    } else if (kindText.includes("zakup")) {
-      kind = "zakup";
-    } else {
+    const kind = classifyWalletEntryKind(entry);
+    if (!kind) {
       continue;
     }
     if (!wantedKinds.has(kind)) {
@@ -965,7 +984,7 @@ async function collectWalletHistory(page, targetMonth, orderTypes) {
   return filtered;
 }
 
-(async () => {
+async function main() {
   const launchOptions = {
     headless: HEADLESS,
     defaultViewport: null,
@@ -1138,7 +1157,16 @@ async function collectWalletHistory(page, targetMonth, orderTypes) {
 
   console.log(JSON.stringify(results));
   await browser.close();
-})().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+}
+
+if (require.main === module) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  normalizeSimple,
+  classifyWalletEntryKind,
+};

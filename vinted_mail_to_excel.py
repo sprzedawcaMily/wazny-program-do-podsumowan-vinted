@@ -3,6 +3,7 @@ import imaplib
 import json
 import os
 import re
+import ssl
 import subprocess
 import time
 import webbrowser
@@ -890,18 +891,52 @@ def write_html_report(path: str, wb: Workbook) -> None:
                 handle.write(html)
 
 
+def _safe_imap_logout(mail) -> None:
+    if mail is None:
+        return
+    try:
+        state = getattr(mail, "state", "")
+        if state == "LOGOUT":
+            return
+        mail.logout()
+    except (OSError, TimeoutError, ssl.SSLError, imaplib.IMAP4.abort, imaplib.IMAP4.error):
+        pass
+
+
 def connect_imap(email_addr: str, password: str, imap_server: str, imap_port: int):
     retries = 3
     for attempt in range(1, retries + 1):
         try:
-            mail = imaplib.IMAP4_SSL(imap_server, imap_port, timeout=30)
+            mail = imaplib.IMAP4_SSL(imap_server, imap_port, timeout=60)
+            try:
+                mail.socket.settimeout(60)
+            except Exception:
+                pass
             mail.login(email_addr, password)
             mail.select("INBOX")
             return mail
-        except (imaplib.IMAP4.abort, OSError) as exc:
+        except (imaplib.IMAP4.abort, OSError, TimeoutError, ssl.SSLError) as exc:
             if attempt >= retries:
                 raise
             print(f"Blad polaczenia IMAP ({exc}). Ponawiam {attempt}/{retries}...")
+            time.sleep(2 * attempt)
+
+
+def _fetch_imap_message(mail, uid: str, retries: int = 3):
+    for attempt in range(1, retries + 1):
+        try:
+            status, msg_data = mail.fetch(uid, "(RFC822)")
+            if status != "OK" or not msg_data:
+                raise imaplib.IMAP4.error(f"Nieprawidlowy status fetch: {status}")
+            return msg_data
+        except (imaplib.IMAP4.abort, imaplib.IMAP4.error, OSError, TimeoutError, ssl.SSLError) as exc:
+            if attempt >= retries:
+                raise
+            print(f"Blad pobierania wiadomosci {uid} ({exc}). Ponawiam {attempt}/{retries}...")
+            try:
+                mail.noop()
+            except Exception:
+                pass
             time.sleep(2 * attempt)
 
 
@@ -961,6 +996,12 @@ def _is_yes(value: str) -> bool:
     return normalized in {"t", "tak", "y", "yes"}
 
 
+def _should_use_imap(history_choice: str, has_email_credentials: bool) -> bool:
+    if not has_email_credentials:
+        return False
+    return not _is_yes(history_choice)
+
+
 def _search_uids(mail, start_date: datetime, end_date: Optional[datetime], sender_filter: Optional[str]) -> List[bytes]:
     criteria = ["SINCE", _format_imap_date(start_date)]
     if end_date is not None:
@@ -1010,7 +1051,10 @@ def extract_records(mail, start_date: datetime, end_date: Optional[datetime], se
 
     for uid_bytes in uids:
         uid = uid_bytes.decode("utf-8", errors="ignore")
-        _, msg_data = mail.fetch(uid, "(RFC822)")
+        try:
+            msg_data = _fetch_imap_message(mail, uid)
+        except Exception:
+            continue
         if not msg_data or not msg_data[0]:
             continue
         raw_email = msg_data[0][1]
@@ -1074,8 +1118,10 @@ def main() -> None:
     sender_contains = os.getenv("VINTED_FROM_CONTAINS", "vinted").strip()
     start_date_str = os.getenv("START_DATE", "2026-03-16").strip()
 
+    history_only = False
     if not email_addr or not password:
-        raise RuntimeError("Ustaw WP_EMAIL i WP_PASSWORD w zmiennych srodowiskowych lub pliku .env")
+        history_only = True
+        print("Brak danych IMAP, uruchamiam tryb tylko historia Vinted.")
 
     try:
         start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
@@ -1143,12 +1189,21 @@ def main() -> None:
     output = _safe_filename(output)
     output_html = _safe_filename(output_html)
 
+    history_choice = "t" if (not email_addr or not password) else input(
+        "Uzyc tylko historie Vinted (bez maili IMAP)? (t/n): "
+    ).strip()
+    force_history = _is_yes(history_choice)
+    history_only = history_only or force_history
+
     print("Start programu Vinted -> Excel")
     if end_date is None:
         print(f"Okres: {period_label}")
     else:
         print(f"Okres: {period_label} (od {start_date.strftime('%Y-%m-%d')})")
-    print(f"IMAP: {imap_server}:{imap_port}")
+    if history_only:
+        print("Tryb: tylko historia Vinted (bez IMAP)")
+    else:
+        print(f"IMAP: {imap_server}:{imap_port}")
     print(f"Excel: {output}")
     print(f"HTML: {output_html}")
 
@@ -1161,28 +1216,33 @@ def main() -> None:
     ws_summary = wb["Podsumowanie"]
     ws_meta = wb["_Meta"]
 
-    print("Lacze z IMAP...")
-    mail = connect_imap(email_addr, password, imap_server, imap_port)
-    print("Polaczono. Pobieram i analizuje wiadomosci...")
-    try:
-        records = extract_records(mail, start_date, end_date, sender_contains)
-    finally:
+    records: List[Record] = []
+    if _should_use_imap(history_choice, bool(email_addr and password)):
+        print("Lacze z IMAP...")
+        mail = connect_imap(email_addr, password, imap_server, imap_port)
+        print("Polaczono. Pobieram i analizuje wiadomosci...")
         try:
-            mail.close()
-        except Exception:
-            pass
-        mail.logout()
+            records = extract_records(mail, start_date, end_date, sender_contains)
+        finally:
+            try:
+                mail.close()
+            except Exception:
+                pass
+            _safe_imap_logout(mail)
 
     history_records: List[Dict[str, str]] = []
-    history_choice = input(
-        "Czy dociagnac historie zakupow/sprzedazy z Vinted (wallet/history)? (t/n): "
-    ).strip()
+    if not force_history:
+        history_choice = input(
+            "Czy dociagnac historie zakupow/sprzedazy z Vinted (wallet/history)? (t/n): "
+        ).strip()
     if _is_yes(history_choice):
         try:
             history_records = _run_puppeteer_history_scraper("vinted_scrape.js", month_str)
             print(f"Pobrano wpisy z historii Vinted: {len(history_records)}")
         except Exception as exc:
             print(f"Scraper historii nie powiodl sie: {exc}")
+
+    cancel_remaining = _build_cancel_remaining(list(records) + list(history_records))
 
     added_sales = 0
     added_purchases = 0
@@ -1200,6 +1260,13 @@ def main() -> None:
             ws_meta.append(["sprzedaz", key])
             added_sales += 1
         elif rec.kind == "zakup":
+            balance_key = (
+                _normalize_title_key(_normalize_scraped_value(rec.title_original)),
+                _amount_abs_key(_normalize_scraped_value(rec.amount_total)),
+            )
+            if cancel_remaining.get(balance_key, 0) > 0:
+                cancel_remaining[balance_key] -= 1
+                continue
             if key in purchase_ids:
                 continue
             append_record(ws_purchases, rec)
@@ -1769,6 +1836,43 @@ def _fallback_tx_from_order_url(order_url: str) -> str:
     return ""
 
 
+def _build_cancel_remaining(records: List[object]) -> Dict[Tuple[str, str], int]:
+    purchase_counts: Dict[Tuple[str, str], int] = {}
+    refund_counts: Dict[Tuple[str, str], int] = {}
+    for item in records:
+        kind_value = item.kind if hasattr(item, "kind") else item.get("kind", "")
+        kind = _normalize_scraped_value(kind_value).lower()
+        if kind not in {"zakup", "zwrot"}:
+            continue
+
+        title_value = (
+            getattr(item, "title_original", "")
+            or getattr(item, "title", "")
+            or (item.get("title_original") if hasattr(item, "get") else "")
+            or (item.get("title") if hasattr(item, "get") else "")
+        )
+        amount_value = (
+            getattr(item, "amount_total", "")
+            or getattr(item, "price", "")
+            or (item.get("amount_total") if hasattr(item, "get") else "")
+            or (item.get("price") if hasattr(item, "get") else "")
+        )
+        title_key = _normalize_title_key(_normalize_scraped_value(title_value))
+        amount_key = _amount_abs_key(_normalize_scraped_value(amount_value))
+        key = (title_key, amount_key)
+
+        if kind == "zakup":
+            purchase_counts[key] = purchase_counts.get(key, 0) + 1
+        elif kind == "zwrot":
+            refund_counts[key] = refund_counts.get(key, 0) + 1
+
+    cancel_remaining: Dict[Tuple[str, str], int] = {}
+    for key, p_count in purchase_counts.items():
+        r_count = refund_counts.get(key, 0)
+        cancel_remaining[key] = min(p_count, r_count)
+    return cancel_remaining
+
+
 def _append_history_records(
     ws_sales, ws_purchases, ws_services, ws_refunds, history_records: List[Dict[str, str]]
 ) -> Tuple[int, int, int, int]:
@@ -1784,24 +1888,7 @@ def _append_history_records(
     added_services = 0
     added_refunds = 0
 
-    purchase_counts: Dict[Tuple[str, str], int] = {}
-    refund_counts: Dict[Tuple[str, str], int] = {}
-    for item in history_records:
-        kind = _normalize_scraped_value(item.get("kind", "")).lower()
-        if kind not in {"zakup", "zwrot"}:
-            continue
-        title = _normalize_title_key(item.get("title", ""))
-        amount_key = _amount_abs_key(_normalize_scraped_value(item.get("price", "")))
-        key = (title, amount_key)
-        if kind == "zakup":
-            purchase_counts[key] = purchase_counts.get(key, 0) + 1
-        elif kind == "zwrot":
-            refund_counts[key] = refund_counts.get(key, 0) + 1
-
-    cancel_remaining: Dict[Tuple[str, str], int] = {}
-    for key, p_count in purchase_counts.items():
-        r_count = refund_counts.get(key, 0)
-        cancel_remaining[key] = min(p_count, r_count)
+    cancel_remaining = _build_cancel_remaining(history_records)
 
     for item in history_records:
         kind = _normalize_scraped_value(item.get("kind", ""))
